@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💎 Diamond Mines</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Título principal -->
+      <header class="game-header">
+        <h1 class="game-title">💎 Diamond Mines</h1>
+        <p class="game-subtitle">Encuentra los diamantes, evita las minas</p>
+      </header>
+
+      <!-- Panel de configuración -->
+      <div class="config-panel instructions card">
+        <div class="config-section">
+
+          <!-- Selector de cantidad de minas -->
+          <div class="form-group ">
+            <label class="form-label">Cantidad de Minas:</label>
+            <div class="mines-selector">
+              <label class="radio-option">
+                <input type="radio" name="mines" value="3" checked />
+                <span>3 Minas</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="mines" value="4" />
+                <span>4 Minas</span>
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="mines" value="5" />
+                <span>5 Minas</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Input de apuesta -->
+          <div class="form-group">
+            <label class="form-label">Apuesta:</label>
+            <div class="bet-controls">
+              <button id="halveBet" class="btn bet-btn">½</button>
+              <input
+                type="number"
+                id="betAmount"
+                class="form-control bet-input"
+                value="1"
+                min="1"
+                max="10"
+              />
+              <button id="doubleBet" class="btn bet-btn">2×</button>
+            </div>
+          </div>
+
+          <!-- Botones de control -->
+          <div class="game-controls">
+            <button class="btn btn--primary" id="startGame">
+              Iniciar Juego
+            </button>
+            <button class="btn btn--secondary" id="cashOut" disabled>
+              Cash Out
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tablero de juego -->
+      <div class="game-board-container">
+        <div class="game-board" id="gameBoard">
+          <!-- Las casillas se generarán dinámicamente -->
+        </div>
+      </div>
+
+      <!-- Panel de información -->
+      <div class="info-panel card">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Balance:</span>
+            <span class="info-value" id="balance">$1000</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Apuesta:</span>
+            <span class="info-value" id="currentBet">$0</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Multiplicador:</span>
+            <span class="info-value" id="multiplier">1.00×</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Minas:</span>
+            <span class="info-value" id="minesLeft">0</span>
+          </div>
+        </div>
+
+        <!-- Mensaje de estado -->
+        <div class="status-message" id="statusMessage">
+          Configura tu apuesta y comienza
+        </div>
+      </div>
+
+      <!-- Instrucciones -->
+      <div class="instructions card">
+        <h4>Instrucciones:</h4>
+        <ul>
+          <li>Selecciona la cantidad de minas (3, 4 o 5)</li>
+          <li>Apuesta maxima 5$</li>
+          <li>Establece tu apuesta usando los botones ½ y 2×</li>
+          <li>Haz clic en "Iniciar Juego" para comenzar</li>
+          <li>Haz clic en las casillas para descubrir diamantes 💎</li>
+          <li>Evita las minas 💣 o perderás tu apuesta</li>
+          <li>
+            Usa "Cash Out" para retirar tus ganancias en cualquier momento
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
