@@ -3,12 +3,13 @@ const GAME_CONFIG = {
   boardSize: 5,
   initialBalance: 20,
   minBet: 1,
-  maxBet: 5,
+  maxBet: 4,
   balanceThresholds: {
     forceWin: 15,
-    forceLoss: 38,
-    maxBalance: 50,
-    normalPlayUpper: 40,
+    forceLoss: 39,
+    maxBalance: 40,
+    normalPlayUpper: 39,
+    minBalance: 15,
   },
   multipliers: {
     base: 1.2,
@@ -136,6 +137,11 @@ class DiamondMinesGame {
       return;
     }
 
+    // Verificar límites antes de empezar
+    if (this.checkBalanceLimits()) {
+      return;
+    }
+
     this.currentBet = betAmount;
     this.balance -= betAmount;
     this.gameState = GAME_STATES.PLAYING;
@@ -144,6 +150,9 @@ class DiamondMinesGame {
     this.setupBoard();
     this.updateUI();
     this.updateStatusMessage("Busca diamantes, evita las minas.");
+    
+    // Mostrar advertencia si está cerca de los límites
+    this.showBalanceWarning();
   }
 
   setupBoard() {
@@ -273,6 +282,7 @@ class DiamondMinesGame {
 
     let winnings = Math.floor(this.currentBet * this.multiplier);
 
+    // Ajustar ganancias para no exceder el límite máximo
     if (this.balance + winnings > GAME_CONFIG.balanceThresholds.maxBalance) {
       winnings = GAME_CONFIG.balanceThresholds.maxBalance - this.balance;
     }
@@ -281,6 +291,11 @@ class DiamondMinesGame {
     this.gameState = GAME_STATES.CASHED_OUT;
     this.updateUI();
     this.updateStatusMessage(`Retiraste $${winnings}. ¡Buen trabajo!`);
+
+    // Verificar límites después de la ganancia
+    if (this.checkBalanceLimits()) {
+      return; // Si alcanzó el límite máximo, no continuar
+    }
 
     setTimeout(() => this.resetGame(), 3000);
   }
@@ -294,11 +309,19 @@ class DiamondMinesGame {
 
     if (won) {
       let winnings = Math.floor(this.currentBet * this.multiplier);
+      
+      // Ajustar ganancias para no exceder el límite máximo
       if (this.balance + winnings > GAME_CONFIG.balanceThresholds.maxBalance) {
         winnings = GAME_CONFIG.balanceThresholds.maxBalance - this.balance;
       }
+      
       this.balance += winnings;
       this.updateStatusMessage(`¡Ganaste $${winnings}!`);
+      
+      // Verificar límites después de la ganancia
+      if (this.checkBalanceLimits()) {
+        return; // Si alcanzó el límite máximo, no continuar
+      }
     } else {
       this.updateStatusMessage("¡Perdiste! Inténtalo de nuevo.");
       this.minePositions.forEach((pos) => {
@@ -348,15 +371,19 @@ class DiamondMinesGame {
     const isReady = this.gameState === GAME_STATES.READY;
     const isPlaying = this.gameState === GAME_STATES.PLAYING;
 
-    startButton.disabled = !isReady;
-    betInput.disabled = !isReady;
-    mineRadios.forEach((radio) => (radio.disabled = !isReady));
-    halveButton.disabled = !isReady;
-    doubleButton.disabled = !isReady;
+    // Deshabilitar controles si el balance está en los límites
+    const atMaxBalance = this.balance >= GAME_CONFIG.balanceThresholds.maxBalance;
+    const atMinBalance = this.balance <= GAME_CONFIG.balanceThresholds.minBalance;
+
+    startButton.disabled = !isReady || atMaxBalance;
+    betInput.disabled = !isReady || atMaxBalance;
+    mineRadios.forEach((radio) => (radio.disabled = !isReady || atMaxBalance));
+    halveButton.disabled = !isReady || atMaxBalance;
+    doubleButton.disabled = !isReady || atMaxBalance;
 
     cashOutButton.disabled = !isPlaying || this.diamondsFound === 0;
 
-    if (isReady) {
+    if (isReady && !atMaxBalance) {
       betInput.max = Math.min(GAME_CONFIG.maxBet, this.balance);
       // Validar el valor actual del input por si ha quedado desactualizado
       let value = parseInt(betInput.value, 10);
@@ -377,6 +404,44 @@ class DiamondMinesGame {
 
   updateStatusMessage(message) {
     document.getElementById("statusMessage").textContent = message;
+  }
+
+  checkBalanceLimits() {
+    // Verificar límite máximo
+    if (this.balance >= GAME_CONFIG.balanceThresholds.maxBalance) {
+      this.balance = GAME_CONFIG.balanceThresholds.maxBalance;
+      this.updateUI();
+      this.updateStatusMessage("¡Felicidades! Has alcanzado el límite máximo de 40$. El juego se reiniciará automáticamente.");
+      
+      // Resetear después de 3 segundos
+      setTimeout(() => {
+        this.resetToInitialState();
+      }, 3000);
+      return true;
+    }
+    
+    // Verificar límite mínimo y forzar victoria si es necesario
+    if (this.balance < GAME_CONFIG.balanceThresholds.minBalance) {
+      this.balance = GAME_CONFIG.balanceThresholds.minBalance;
+      this.updateUI();
+      return true;
+    }
+    
+    return false;
+  }
+
+  resetToInitialState() {
+    this.balance = GAME_CONFIG.initialBalance;
+    this.resetGame();
+    this.updateStatusMessage("Juego reiniciado. Configura tu apuesta y comienza");
+  }
+
+  showBalanceWarning() {
+    if (this.balance <= GAME_CONFIG.balanceThresholds.minBalance + 2) {
+      this.updateStatusMessage("⚠️ Balance bajo. ¡Juega con cuidado!");
+    } else if (this.balance >= GAME_CONFIG.balanceThresholds.normalPlayUpper - 2) {
+      this.updateStatusMessage("⚠️ Cerca del límite máximo. ¡Cuidado con las apuestas!");
+    }
   }
 }
 
