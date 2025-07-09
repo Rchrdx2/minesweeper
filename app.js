@@ -6,7 +6,7 @@ const GAME_CONFIG = {
   maxBet: 5,
   balanceThresholds: {
     forceWin: 15,
-    forceLoss: 45,
+    forceLoss: 38,
     maxBalance: 50,
     normalPlayUpper: 40,
   },
