@@ -283,7 +283,11 @@ class DiamondMinesGame {
     this.updateUI();
     this.updateStatusMessage(`Retiraste ${formatCurrency(winnings)}. ¡Buen trabajo!`);
 
-    // La verificación de límites se hará automáticamente en updateUI()
+    // Verificar límites inmediatamente después de actualizar el balance
+    if (this.checkBalanceLimits()) {
+      return; // Si se alcanzó un límite, no programar reset automático
+    }
+    
     setTimeout(() => this.resetGame(), 3000);
   }
 
@@ -305,7 +309,11 @@ class DiamondMinesGame {
       this.balance += winnings;
       this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
       
-      // La verificación de límites se hará automáticamente en updateUI()
+      // Verificar límites inmediatamente después de ganar
+      this.updateUI();
+      if (this.checkBalanceLimits()) {
+        return; // Si se alcanzó un límite, no programar reset automático
+      }
     } else {
       this.updateStatusMessage("¡Perdiste! Inténtalo de nuevo.");
       this.minePositions.forEach((pos) => {
@@ -314,9 +322,9 @@ class DiamondMinesGame {
           this.cells[pos].element.textContent = "💣";
         }
       });
+      this.updateUI();
     }
 
-    this.updateUI();
     setTimeout(() => this.resetGame(), 3000);
   }
 
@@ -355,7 +363,8 @@ class DiamondMinesGame {
     const isReady = this.gameState === GAME_STATES.READY;
     const isPlaying = this.gameState === GAME_STATES.PLAYING;
 
-    // Verificar límites de balance DESPUÉS de actualizar UI
+    // Verificar límites de balance solo cuando el juego está en estado READY
+    // Para otros estados, la verificación se hace explícitamente donde corresponde
     if (isReady) {
       this.checkBalanceLimits();
     }
