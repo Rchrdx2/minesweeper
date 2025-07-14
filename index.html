@@ -117,6 +117,29 @@
       </div>
     </div>
 
+    <!-- Modal de límite máximo -->
+    <div id="maxLimitModal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🎉 ¡Felicidades!</h2>
+        </div>
+        <div class="modal-body">
+          <p>Has alcanzado el límite máximo de <strong>$40</strong></p>
+          <p>El juego se bloqueará y será redirigido al inicio automáticamente.</p>
+          <div class="countdown-display">
+            <span>Redirigiendo en: </span>
+            <span id="countdown" class="countdown-number">5</span>
+            <span> segundos</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="restartNowBtn" class="btn btn--primary btn--full-width">
+            Reiniciar Ahora
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

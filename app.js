@@ -411,12 +411,7 @@ class DiamondMinesGame {
     if (this.balance >= GAME_CONFIG.balanceThresholds.maxBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.maxBalance;
       this.updateUI();
-      this.updateStatusMessage("¡Felicidades! Has alcanzado el límite máximo de 40$. El juego se reiniciará automáticamente.");
-      
-      // Resetear después de 3 segundos
-      setTimeout(() => {
-        this.resetToInitialState();
-      }, 3000);
+      this.showMaxLimitModal();
       return true;
     }
     
@@ -428,6 +423,53 @@ class DiamondMinesGame {
     }
     
     return false;
+  }
+
+  showMaxLimitModal() {
+    // Bloquear toda la interfaz
+    this.gameState = GAME_STATES.READY;
+    this.updateUI();
+    
+    // Mostrar el modal
+    const modal = document.getElementById('maxLimitModal');
+    const countdownElement = document.getElementById('countdown');
+    const restartButton = document.getElementById('restartNowBtn');
+    
+    modal.classList.remove('hidden');
+    
+    let countdown = 5;
+    countdownElement.textContent = countdown;
+    
+    // Agregar evento al botón de reiniciar ahora
+    const handleRestartNow = () => {
+      clearInterval(countdownInterval);
+      this.hideModalAndRestart();
+      restartButton.removeEventListener('click', handleRestartNow);
+    };
+    
+    restartButton.addEventListener('click', handleRestartNow);
+    
+    // Iniciar countdown
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      countdownElement.textContent = countdown;
+      
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        this.hideModalAndRestart();
+        restartButton.removeEventListener('click', handleRestartNow);
+      }
+    }, 1000);
+  }
+
+  hideModalAndRestart() {
+    const modal = document.getElementById('maxLimitModal');
+    modal.classList.add('hidden');
+    
+    // Reiniciar el juego después de una pequeña pausa
+    setTimeout(() => {
+      this.resetToInitialState();
+    }, 300);
   }
 
   resetToInitialState() {
