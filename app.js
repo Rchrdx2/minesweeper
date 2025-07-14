@@ -1,15 +1,15 @@
 // Configuración del juego
 const GAME_CONFIG = {
   boardSize: 5,
-  initialBalance: 20,
-  minBet: 1,
-  maxBet: 4,
+  initialBalance: 50000, // 50,000 pesos
+  minBet: 1000, // 1,000 pesos
+  maxBet: 5000, // 5,000 pesos
   balanceThresholds: {
-    forceWin: 15,
-    forceLoss: 39,
-    maxBalance: 40,
-    normalPlayUpper: 39,
-    minBalance: 15,
+    forceWin: 40000, // 40,000 pesos - forzar victoria
+    forceLoss: 97000, // 97,000 pesos - forzar pérdida
+    maxBalance: 100000, // 100,000 pesos - límite máximo y bloqueo
+    normalPlayUpper: 97000, // 97,000 pesos
+    minBalance: 40000, // 40,000 pesos
   },
   multipliers: {
     base: 1.2,
@@ -20,6 +20,11 @@ const GAME_CONFIG = {
     },
   },
 };
+
+// Función para formatear moneda en pesos
+function formatCurrency(amount) {
+  return `$${amount.toLocaleString('es-AR')}`;
+}
 
 const GAME_STATES = {
   READY: "ready",
@@ -138,9 +143,7 @@ class DiamondMinesGame {
     }
 
     // Verificar límites antes de empezar
-    if (this.checkBalanceLimits()) {
-      return;
-    }
+    // Ya no es necesario llamar checkBalanceLimits aquí porque se llama en updateUI()
 
     this.currentBet = betAmount;
     this.balance -= betAmount;
@@ -214,9 +217,7 @@ class DiamondMinesGame {
   }
 
   manipulateMines(clickedIndex) {
-    const potentialWinnings = this.currentBet * this.multiplier;
-    const potentialBalance = this.balance + potentialWinnings;
-
+    // Solo forzar victoria cuando el balance está bajo (menos de 40k)
     if (this.balance < GAME_CONFIG.balanceThresholds.forceWin) {
       if (this.cells[clickedIndex].hasMine) {
         const newMinePosition = this.findSafeSpotForMine(clickedIndex);
@@ -229,19 +230,9 @@ class DiamondMinesGame {
           }
         }
       }
-    } else if (potentialBalance > GAME_CONFIG.balanceThresholds.forceLoss) {
-      if (!this.cells[clickedIndex].hasMine) {
-        const mineToMove = this.findMineToMove(clickedIndex);
-        if (mineToMove !== -1) {
-          this.cells[mineToMove].hasMine = false;
-          this.cells[clickedIndex].hasMine = true;
-          const mineIndexInArray = this.minePositions.indexOf(mineToMove);
-          if (mineIndexInArray > -1) {
-            this.minePositions.splice(mineIndexInArray, 1, clickedIndex);
-          }
-        }
-      }
     }
+    // Se removió la lógica de forzar pérdida a los 97k
+    // El juego ahora es completamente aleatorio después de 40k
   }
 
   findSafeSpotForMine(avoidIndex) {
@@ -290,13 +281,9 @@ class DiamondMinesGame {
     this.balance += winnings;
     this.gameState = GAME_STATES.CASHED_OUT;
     this.updateUI();
-    this.updateStatusMessage(`Retiraste $${winnings}. ¡Buen trabajo!`);
+    this.updateStatusMessage(`Retiraste ${formatCurrency(winnings)}. ¡Buen trabajo!`);
 
-    // Verificar límites después de la ganancia
-    if (this.checkBalanceLimits()) {
-      return; // Si alcanzó el límite máximo, no continuar
-    }
-
+    // La verificación de límites se hará automáticamente en updateUI()
     setTimeout(() => this.resetGame(), 3000);
   }
 
@@ -316,12 +303,9 @@ class DiamondMinesGame {
       }
       
       this.balance += winnings;
-      this.updateStatusMessage(`¡Ganaste $${winnings}!`);
+      this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
       
-      // Verificar límites después de la ganancia
-      if (this.checkBalanceLimits()) {
-        return; // Si alcanzó el límite máximo, no continuar
-      }
+      // La verificación de límites se hará automáticamente en updateUI()
     } else {
       this.updateStatusMessage("¡Perdiste! Inténtalo de nuevo.");
       this.minePositions.forEach((pos) => {
@@ -355,8 +339,8 @@ class DiamondMinesGame {
   }
 
   updateUI() {
-    document.getElementById("balance").textContent = `$${this.balance}`;
-    document.getElementById("currentBet").textContent = `$${this.currentBet}`;
+    document.getElementById("balance").textContent = formatCurrency(this.balance);
+    document.getElementById("currentBet").textContent = formatCurrency(this.currentBet);
     document.getElementById("multiplier").textContent =
       `${this.multiplier.toFixed(2)}x`;
     document.getElementById("minesLeft").textContent = this.selectedMines;
@@ -370,6 +354,11 @@ class DiamondMinesGame {
 
     const isReady = this.gameState === GAME_STATES.READY;
     const isPlaying = this.gameState === GAME_STATES.PLAYING;
+
+    // Verificar límites de balance DESPUÉS de actualizar UI
+    if (isReady) {
+      this.checkBalanceLimits();
+    }
 
     // Deshabilitar controles si el balance está en los límites
     const atMaxBalance = this.balance >= GAME_CONFIG.balanceThresholds.maxBalance;
@@ -410,7 +399,6 @@ class DiamondMinesGame {
     // Verificar límite máximo
     if (this.balance >= GAME_CONFIG.balanceThresholds.maxBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.maxBalance;
-      this.updateUI();
       this.showMaxLimitModal();
       return true;
     }
@@ -418,7 +406,6 @@ class DiamondMinesGame {
     // Verificar límite mínimo y forzar victoria si es necesario
     if (this.balance < GAME_CONFIG.balanceThresholds.minBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.minBalance;
-      this.updateUI();
       return true;
     }
     
@@ -428,36 +415,50 @@ class DiamondMinesGame {
   showMaxLimitModal() {
     // Bloquear toda la interfaz
     this.gameState = GAME_STATES.READY;
-    this.updateUI();
     
     // Mostrar el modal
     const modal = document.getElementById('maxLimitModal');
     const countdownElement = document.getElementById('countdown');
     const restartButton = document.getElementById('restartNowBtn');
     
+    if (!modal) {
+      console.error("Modal element not found!");
+      return;
+    }
+    
     modal.classList.remove('hidden');
     
     let countdown = 5;
-    countdownElement.textContent = countdown;
+    if (countdownElement) {
+      countdownElement.textContent = countdown;
+    }
     
     // Agregar evento al botón de reiniciar ahora
     const handleRestartNow = () => {
       clearInterval(countdownInterval);
       this.hideModalAndRestart();
-      restartButton.removeEventListener('click', handleRestartNow);
+      if (restartButton) {
+        restartButton.removeEventListener('click', handleRestartNow);
+      }
     };
     
-    restartButton.addEventListener('click', handleRestartNow);
+    if (restartButton) {
+      restartButton.addEventListener('click', handleRestartNow);
+    }
     
     // Iniciar countdown
     const countdownInterval = setInterval(() => {
       countdown--;
-      countdownElement.textContent = countdown;
+      if (countdownElement) {
+        countdownElement.textContent = countdown;
+      }
       
       if (countdown <= 0) {
         clearInterval(countdownInterval);
         this.hideModalAndRestart();
-        restartButton.removeEventListener('click', handleRestartNow);
+        if (restartButton) {
+          restartButton.removeEventListener('click', handleRestartNow);
+        }
       }
     }, 1000);
   }
@@ -479,11 +480,11 @@ class DiamondMinesGame {
   }
 
   showBalanceWarning() {
-    if (this.balance <= GAME_CONFIG.balanceThresholds.minBalance + 2) {
+    if (this.balance <= GAME_CONFIG.balanceThresholds.minBalance + 5000) {
       this.updateStatusMessage("⚠️ Balance bajo. ¡Juega con cuidado!");
-    } else if (this.balance >= GAME_CONFIG.balanceThresholds.normalPlayUpper - 2) {
-      this.updateStatusMessage("⚠️ Cerca del límite máximo. ¡Cuidado con las apuestas!");
     }
+    // Se removió la advertencia de límite máximo a 97k
+    // Solo se mantiene el límite máximo de 100k con bloqueo total
   }
 }
 
