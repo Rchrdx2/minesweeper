@@ -1,3 +1,22 @@
+<!--
+  DIAMOND MINES GAME - JUEGO DE MINAS DE DIAMANTES
+  ===============================================
+  
+  Archivo HTML principal del juego Diamond Mines.
+  
+  Estructura del juego:
+  - Header: Título y subtítulo del juego
+  - Panel de configuración: Controles de minas y apuestas
+  - Tablero de juego: Grid 5x5 generado dinámicamente
+  - Panel de información: Balance, multiplicador, estado
+  - Instrucciones: Guía para el jugador
+  - Modal: Aviso cuando se alcanza el límite máximo
+  
+  Tecnologías usadas:
+  - HTML5 semántico
+  - CSS3 con variables personalizadas
+  - JavaScript vanilla (ES6+)
+-->
 <!doctype html>
 <html lang="es">
   <head>
@@ -7,18 +26,36 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- 
+      CONTENEDOR PRINCIPAL
+      Envuelve todo el contenido del juego y proporciona el layout centrado
+    -->
     <div class="container">
-      <!-- Título principal -->
+      
+      <!-- 
+        ENCABEZADO DEL JUEGO
+        Muestra el título principal y subtítulo descriptivo
+      -->
       <header class="game-header">
         <h1 class="game-title">💎 Diamond Mines</h1>
         <p class="game-subtitle">Encuentra los diamantes, evita las minas</p>
       </header>
 
-      <!-- Panel de configuración -->
+      <!-- 
+        PANEL DE CONFIGURACIÓN DEL JUEGO
+        Contiene todos los controles para configurar una partida:
+        - Selector de cantidad de minas (3, 4, o 5)
+        - Input de apuesta con botones de modificación
+        - Botones principales (Iniciar Juego y Cash Out)
+      -->
       <div class="config-panel instructions card">
         <div class="config-section">
 
-          <!-- Selector de cantidad de minas -->
+          <!-- 
+            SELECTOR DE CANTIDAD DE MINAS
+            Radio buttons para elegir dificultad (3, 4 o 5 minas)
+            Más minas = mayor multiplicador pero mayor riesgo
+          -->
           <div class="form-group ">
             <label class="form-label">Cantidad de Minas:</label>
             <div class="mines-selector">
@@ -37,7 +74,17 @@
             </div>
           </div>
 
-          <!-- Input de apuesta -->
+          <!-- 
+            CONTROLES DE APUESTA
+            Sistema para establecer la cantidad a apostar:
+            - Botón ½: Reduce la apuesta a la mitad
+            - Input numérico: Valor de la apuesta (1.000 - 5.000 pesos)
+            - Botón 2×: Duplica la apuesta actual
+            
+            Límites:
+            - Mínimo: $1.000
+            - Máximo: $5.000 o balance disponible (el menor)
+          -->
           <div class="form-group">
             <label class="form-label">Apuesta:</label>
             <div class="bet-controls">
@@ -54,7 +101,12 @@
             </div>
           </div>
 
-          <!-- Botones de control -->
+          <!-- 
+            BOTONES PRINCIPALES DE JUEGO
+            - Iniciar Juego: Comienza una nueva partida con la configuración actual
+            - Cash Out: Retira las ganancias actuales sin completar el tablero
+                       Solo disponible durante el juego con al menos 1 diamante
+          -->
           <div class="game-controls">
             <button class="btn btn--primary" id="startGame">
               Iniciar Juego
@@ -66,14 +118,37 @@
         </div>
       </div>
 
-      <!-- Tablero de juego -->
+      <!-- 
+        TABLERO DE JUEGO
+        Contenedor para el grid 5x5 del juego.
+        Las 25 celdas se generan dinámicamente via JavaScript.
+        
+        Cada celda puede contener:
+        - 💎 Diamante (safe, suma al multiplicador)
+        - 💣 Mina (explota, termina el juego)
+        
+        El tablero se genera al iniciar cada partida con posiciones
+        aleatorias para las minas.
+      -->
       <div class="game-board-container">
         <div class="game-board" id="gameBoard">
-          <!-- Las casillas se generarán dinámicamente -->
+          <!-- Las casillas se generarán dinámicamente via JavaScript -->
         </div>
       </div>
 
-      <!-- Panel de información -->
+      <!-- 
+        PANEL DE INFORMACIÓN DEL JUEGO
+        Muestra estadísticas en tiempo real de la partida actual:
+        
+        Grid de información:
+        - Balance: Dinero disponible del jugador (en pesos)
+        - Apuesta: Cantidad apostada en la partida actual
+        - Multiplicador: Factor actual de ganancia (crece con cada diamante)
+        - Minas: Cantidad de minas configuradas para esta partida
+        
+        También incluye el mensaje de estado que informa al jugador
+        sobre el estado actual del juego.
+      -->
       <div class="info-panel card">
         <div class="info-grid">
           <div class="info-item">
@@ -94,13 +169,32 @@
           </div>
         </div>
 
-        <!-- Mensaje de estado -->
+        <!-- 
+          MENSAJE DE ESTADO
+          Proporciona feedback al jugador sobre:
+          - Instrucciones ("Configura tu apuesta...")
+          - Estado del juego ("Busca diamantes...")  
+          - Resultados ("¡Ganaste $X!", "¡Perdiste!")
+          - Advertencias ("Balance bajo...")
+        -->
         <div class="status-message" id="statusMessage">
           Configura tu apuesta y comienza
         </div>
       </div>
 
-      <!-- Instrucciones -->
+      <!-- 
+        PANEL DE INSTRUCCIONES
+        Guía paso a paso para nuevos jugadores.
+        Explica todas las mecánicas básicas del juego:
+        
+        1. Configuración de minas y dificultad
+        2. Límites de apuestas
+        3. Controles de apuesta
+        4. Inicio del juego
+        5. Mecánica de revelado de celdas
+        6. Condiciones de derrota
+        7. Función Cash Out
+      -->
       <div class="instructions card">
         <h4>Instrucciones:</h4>
         <ul>
@@ -117,21 +211,60 @@
       </div>
     </div>
 
-    <!-- Modal de límite máximo -->
+    <!-- 
+      MODAL DE LÍMITE MÁXIMO
+      =====================
+      
+      Modal que aparece cuando el jugador alcanza $100.000 (límite máximo).
+      
+      Características:
+      - Overlay que bloquea toda la interfaz
+      - Mensaje de felicitación por alcanzar el límite
+      - Countdown automático de 5 segundos
+      - Botón para reiniciar inmediatamente
+      - Al terminar, reinicia el juego con $50.000
+      
+      Estructura:
+      - modal-overlay: Fondo semitransparente que cubre toda la pantalla
+      - modal-content: Contenedor principal del modal
+      - modal-header: Título con emoji de celebración
+      - modal-body: Mensaje explicativo y countdown
+      - modal-footer: Botón de acción
+      
+      Estados:
+      - hidden: Clase que oculta el modal (display: none)
+      - visible: Se remueve 'hidden' para mostrar el modal
+    -->
     <div id="maxLimitModal" class="modal-overlay hidden">
       <div class="modal-content">
+        
+        <!-- Encabezado del modal con emoji de celebración -->
         <div class="modal-header">
           <h2>🎉 ¡Felicidades!</h2>
         </div>
+        
+        <!-- Cuerpo principal con mensaje y countdown -->
         <div class="modal-body">
           <p>Has alcanzado el límite máximo de <strong>$100.000</strong></p>
           <p>El juego se bloqueará y será redirigido al inicio automáticamente.</p>
+          
+          <!-- 
+            DISPLAY DE COUNTDOWN
+            Muestra una cuenta regresiva de 5 segundos.
+            El número se actualiza cada segundo via JavaScript.
+          -->
           <div class="countdown-display">
             <span>Redirigiendo en: </span>
             <span id="countdown" class="countdown-number">5</span>
             <span> segundos</span>
           </div>
         </div>
+        
+        <!-- 
+          PIE DEL MODAL
+          Contiene el botón para reiniciar inmediatamente
+          sin esperar el countdown automático.
+        -->
         <div class="modal-footer">
           <button id="restartNowBtn" class="btn btn--primary btn--full-width">
             Reiniciar Ahora
@@ -140,6 +273,20 @@
       </div>
     </div>
 
+    <!-- 
+      SCRIPT PRINCIPAL
+      Carga el archivo JavaScript que contiene toda la lógica del juego.
+      
+      El archivo app.js incluye:
+      - Clase DiamondMinesGame (lógica principal)
+      - Sistema de manipulación de minas
+      - Gestión de balance y límites
+      - Interfaz de usuario y eventos
+      - Sistema modal
+      
+      Se carga al final del body para asegurar que todo el DOM
+      esté disponible cuando se ejecute el JavaScript.
+    -->
     <script src="app.js"></script>
   </body>
 </html>

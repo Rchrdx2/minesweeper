@@ -1,91 +1,176 @@
+/**
+ * DIAMOND MINES GAME - ESTILOS CSS
+ * =================================
+ * 
+ * Archivo de estilos principal para el juego Diamond Mines.
+ * 
+ * Estructura del CSS:
+ * 1. Variables CSS personalizadas (Design System)
+ * 2. Estilos base y reset
+ * 3. Tipografía
+ * 4. Componentes reutilizables (botones, formularios, cards)
+ * 5. Layout y contenedores
+ * 6. Estilos específicos del juego
+ * 7. Sistema modal
+ * 8. Responsive design
+ * 
+ * Tema de colores: Oro, Plata y Rojo
+ * Filosofía: Dark theme con acentos dorados para crear
+ * ambiente de casino elegante y premium.
+ */
+
+/* Importación de fuente Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap');
 
+/**
+ * VARIABLES CSS - DESIGN SYSTEM
+ * =============================
+ * 
+ * Sistema de design tokens que define todos los valores
+ * de diseño reutilizables del juego.
+ */
 :root {
   
-    /* Gold, Silver, Red Theme */
-   --color-background: #000000;
-  --color-surface: #111111;
-  --color-text: #ffd700;
-  --color-text-secondary: #bfa600;
-  --color-primary: #ffd700;
-  --color-primary-hover: #e6c200;
-  --color-primary-active: #bfa600;
-  --color-secondary: #c0c0c0;
-  --color-secondary-hover: #e0e0e0;
-  --color-secondary-active: #a8a8a8;
-  --color-border: #bfa600;
-  --color-btn-primary-text: #181818;
-  --color-card-border: #ffd700;
-  --color-card-border-inner: #ffd700;
-  --color-error: #8b0000;
-  --color-success: #ffd700;
-  --color-warning: #d7263d;
-  --color-info: #c0c0c0;
-  --color-focus-ring: rgba(255, 215, 0, 0.4);
+  /**
+   * PALETA DE COLORES - TEMA ORO/PLATA/ROJO
+   * ======================================
+   * 
+   * Esquema de color principal para crear ambiente de casino:
+   * - Negro: Fondo principal elegante
+   * - Oro: Color primario para elementos importantes
+   * - Plata: Color secundario para controles
+   * - Rojo: Color de error/peligro (minas, advertencias)
+   */
+   --color-background: #000000;        /* Fondo principal negro */
+  --color-surface: #111111;           /* Superficie de elementos */
+  --color-text: #ffd700;              /* Texto principal dorado */
+  --color-text-secondary: #bfa600;    /* Texto secundario dorado oscuro */
+  --color-primary: #ffd700;           /* Primario dorado */
+  --color-primary-hover: #e6c200;     /* Hover dorado */
+  --color-primary-active: #bfa600;    /* Active dorado oscuro */
+  --color-secondary: #c0c0c0;         /* Secundario plateado */
+  --color-secondary-hover: #e0e0e0;   /* Hover plateado */
+  --color-secondary-active: #a8a8a8;  /* Active plateado oscuro */
+  --color-border: #bfa600;            /* Bordes dorados */
+  --color-btn-primary-text: #181818;  /* Texto en botones primarios */
+  --color-card-border: #ffd700;       /* Bordes de tarjetas */
+  --color-card-border-inner: #ffd700; /* Bordes internos */
+  --color-error: #8b0000;             /* Rojo para errores/minas */
+  --color-success: #ffd700;           /* Dorado para éxito */
+  --color-warning: #d7263d;           /* Rojo para advertencias */
+  --color-info: #c0c0c0;              /* Plateado para información */
+  --color-focus-ring: rgba(255, 215, 0, 0.4); /* Anillo de focus */
 
-
-  /* Common style patterns */
-  --focus-ring: 0 0 0 3px var(--color-focus-ring);
-  --focus-outline: 2px solid var(--color-primary);
-  /* Typography */
+  /**
+   * PATRONES DE ESTILO COMUNES
+   * =========================
+   */
+  --focus-ring: 0 0 0 3px var(--color-focus-ring);     /* Sombra de focus */
+  --focus-outline: 2px solid var(--color-primary);     /* Outline de focus */
+  /**
+   * SISTEMA TIPOGRÁFICO
+   * ===================
+   * 
+   * Jerarquía tipográfica completa con fuentes, tamaños,
+   * pesos y espaciado optimizados para legibilidad.
+   */
   --font-family-base: 'Montserrat', 'FKGroteskNeue', 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono:
-    "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    monospace;
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 14px;
-  --font-size-md: 14px;
-  --font-size-lg: 16px;
-  --font-size-xl: 18px;
-  --font-size-2xl: 20px;
-  --font-size-3xl: 24px;
-  --font-size-4xl: 30px;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 550;
-  --font-weight-bold: 600;
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.5;
-  --letter-spacing-tight: -0.01em;
+  --font-family-mono: "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  /* Escala de tamaños tipográficos */
+  --font-size-xs: 11px;    /* Extra pequeño para detalles */
+  --font-size-sm: 12px;    /* Pequeño para labels */
+  --font-size-base: 14px;  /* Base para texto normal */
+  --font-size-md: 14px;    /* Mediano (igual que base) */
+  --font-size-lg: 16px;    /* Grande para texto importante */
+  --font-size-xl: 18px;    /* Extra grande para títulos menores */
+  --font-size-2xl: 20px;   /* Título h3 */
+  --font-size-3xl: 24px;   /* Título h2 */
+  --font-size-4xl: 30px;   /* Título principal h1 */
+  
+  /* Pesos tipográficos */
+  --font-weight-normal: 400;    /* Texto normal */
+  --font-weight-medium: 500;    /* Texto medio */
+  --font-weight-semibold: 550;  /* Semi bold para énfasis */
+  --font-weight-bold: 600;      /* Bold para elementos importantes */
+  
+  /* Espaciado tipográfico */
+  --line-height-tight: 1.2;     /* Interlineado ajustado para títulos */
+  --line-height-normal: 1.5;    /* Interlineado normal para texto */
+  --letter-spacing-tight: -0.01em; /* Espaciado de letras ajustado */
 
-  /* Spacing */
-  --space-0: 0;
-  --space-1: 1px;
-  --space-2: 2px;
-  --space-4: 4px;
-  --space-6: 6px;
-  --space-8: 8px;
-  --space-10: 10px;
-  --space-12: 12px;
-  --space-16: 16px;
-  --space-20: 20px;
-  --space-24: 24px;
-  --space-32: 32px;
+  /**
+   * SISTEMA DE ESPACIADO
+   * ===================
+   * 
+   * Escala de espaciado consistente basada en múltiplos de 4px
+   * para mantener una grilla visual coherente.
+   */
+  --space-0: 0;      /* Sin espacio */
+  --space-1: 1px;    /* Borde fino */
+  --space-2: 2px;    /* Muy pequeño */
+  --space-4: 4px;    /* Base mínima */
+  --space-6: 6px;    /* Pequeño */
+  --space-8: 8px;    /* Normal pequeño */
+  --space-10: 10px;  /* Mediano pequeño */
+  --space-12: 12px;  /* Normal */
+  --space-16: 16px;  /* Mediano */
+  --space-20: 20px;  /* Grande */
+  --space-24: 24px;  /* Extra grande */
+  --space-32: 32px;  /* Muy grande */
 
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-base: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-full: 9999px;
+  /**
+   * BORDER RADIUS - SISTEMA DE REDONDEADO
+   * ====================================
+   */
+  --radius-sm: 6px;     /* Pequeño para botones pequeños */
+  --radius-base: 8px;   /* Base para la mayoría de elementos */
+  --radius-md: 10px;    /* Mediano para cards */
+  --radius-lg: 12px;    /* Grande para modales */
+  --radius-full: 9999px; /* Completamente redondo */
 
-  /* Shadows */
+  /**
+   * SISTEMA DE SOMBRAS
+   * =================
+   * 
+   * Sombras sutiles para crear profundidad sin sobrecargar
+   * el diseño dark theme.
+   */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
 
-  /* Animation */
-  --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+  /**
+   * SISTEMA DE ANIMACIONES
+   * =====================
+   * 
+   * Duraciones y curvas de animación consistentes para
+   * crear transiciones fluidas y profesionales.
+   */
+  --duration-fast: 150ms;    /* Rápido para hover effects */
+  --duration-normal: 250ms;  /* Normal para transiciones */
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1); /* Curva suave estándar */
 
-  /* Layout */
-  --container-sm: 640px;
-  --container-md: 768px;
-  --container-lg: 1024px;
-  --container-xl: 1280px;
+  /**
+   * SISTEMA DE LAYOUT - BREAKPOINTS
+   * ==============================
+   * 
+   * Breakpoints para diseño responsive basados en
+   * tamaños de contenedor estándar.
+   */
+  --container-sm: 640px;   /* Móvil grande / Tablet pequeña */
+  --container-md: 768px;   /* Tablet */
+  --container-lg: 1024px;  /* Laptop */
+  --container-xl: 1280px;  /* Desktop */
 }
 
-/* Base styles */
+/**
+ * ESTILOS BASE
+ * ============
+ * 
+ * Configuración fundamental para todos los elementos HTML.
+ * Establece la tipografía base, colores y comportamientos generales.
+ */
+
+/* Configuración base del documento */
 html {
   font-size: var(--font-size-base);
   font-family: var(--font-family-base);
@@ -94,19 +179,30 @@ html {
   background-color: var(--color-background);
   box-sizing: border-box;
 }
+
+/* Reset básico del body */
 body {
   margin: 0;
   padding: 0;
   
 }
 
+/* Reset universal del box-sizing para todos los elementos */
 *,
 *::before,
 *::after {
   box-sizing: inherit;
 }
 
-/* Typography */
+/**
+ * SISTEMA TIPOGRÁFICO
+ * ===================
+ * 
+ * Estilos para títulos, texto y elementos tipográficos.
+ * Aplica la jerarquía visual y mejora la legibilidad.
+ */
+
+/* Reset y estilos base para encabezados */
 h1,
 h2,
 h3,
@@ -120,666 +216,851 @@ h6 {
   letter-spacing: var(--letter-spacing-tight);
 }
 
+/* Jerarquía de tamaños para encabezados */
 h1 {
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-4xl);  /* 30px - Título principal */
 }
 h2 {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-3xl);  /* 24px - Subtítulo principal */
 }
 h3 {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-2xl);  /* 20px - Sección */
 }
 h4 {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-xl);   /* 18px - Subsección */
 }
 h5 {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-lg);   /* 16px - Elemento menor */
 }
 h6 {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-md);   /* 14px - Detalle */
 }
 
+/* Estilos para párrafos */
 p {
-  margin: 0 0 var(--space-16) 0;
+  margin: 0 0 var(--space-16) 0;  /* Espaciado inferior para legibilidad */
 }
 
+/* Estilos para enlaces */
 a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color var(--duration-fast) var(--ease-standard);
+  color: var(--color-primary);     /* Color dorado para enlaces */
+  text-decoration: none;           /* Sin subrayado por defecto */
+  transition: color var(--duration-fast) var(--ease-standard);  /* Transición suave */
 }
 
 a:hover {
-  color: var(--color-primary-hover);
+  color: var(--color-primary-hover);  /* Color al hacer hover */
 }
 
+/* Estilos para código inline */
 code {
-  padding: var(--space-1) var(--space-4);
+  padding: var(--space-1) var(--space-4);  /* Padding mínimo para legibilidad */
 }
 
-/* Buttons */
+/**
+ * SISTEMA DE BOTONES
+ * =================
+ * 
+ * Componentes de botón reutilizables con estados y variantes.
+ * Incluye estilos base, hover, active y disabled.
+ */
+
+/* Clase base para todos los botones */
 .btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: var(--space-8) var(--space-16);
-  border-radius: var(--radius-base);
-  font-size: var(--font-size-base);
-  font-weight: 500;
-  line-height: 1.5;
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-standard);
-  border: none;
-  text-decoration: none;
-  position: relative;
+  justify-content: center;              /* Centrado del contenido */
+  padding: var(--space-8) var(--space-16);  /* Padding estándar */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  font-size: var(--font-size-base);     /* Tamaño de fuente base */
+  font-weight: 500;                     /* Peso medio para legibilidad */
+  line-height: 1.5;                     /* Altura de línea */
+  cursor: pointer;                      /* Cursor de mano */
+  transition: all var(--duration-normal) var(--ease-standard);  /* Transiciones suaves */
+  border: none;                         /* Sin borde por defecto */
+  text-decoration: none;                /* Sin decoración de texto */
+  position: relative;                   /* Para pseudo-elementos */
 }
 
+/* Estado de foco accesible */
 .btn:focus-visible {
   outline: none;
-  box-shadow: var(--focus-ring);
+  box-shadow: var(--focus-ring);        /* Anillo de foco visible */
 }
 
+/* Variante primaria - botón principal dorado */
 .btn--primary {
-  background: var(--color-primary);
-  color: var(--color-btn-primary-text);
+  background: var(--color-primary);     /* Fondo dorado */
+  color: var(--color-btn-primary-text); /* Texto negro */
 }
 
 .btn--primary:hover {
-  background: var(--color-primary-hover);
+  background: var(--color-primary-hover);  /* Hover más claro */
 }
 
 .btn--primary:active {
-  background: var(--color-primary-active);
+  background: var(--color-primary-active); /* Estado activo más oscuro */
 }
 
+/* Variante secundaria - botón alternativo plateado */
 .btn--secondary {
-  background: var(--color-secondary);
-  color: var(--color-text);
+  background: var(--color-secondary);    /* Fondo plateado */
+  color: var(--color-text);             /* Texto blanco */
 }
 
 .btn--secondary:hover {
-  background: var(--color-secondary-hover);
+  background: var(--color-secondary-hover);  /* Hover más claro */
 }
 
 .btn--secondary:active {
-  background: var(--color-secondary-active);
+  background: var(--color-secondary-active); /* Estado activo */
 }
 
+/* Modificador de ancho completo */
 .btn--full-width {
-  width: 100%;
+  width: 100%;                          /* Ocupa todo el ancho disponible */
 }
 
+/* Estado deshabilitado para todos los botones */
 .btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.5;                         /* Transparencia reducida */
+  cursor: not-allowed;                  /* Cursor de prohibido */
 }
 
-/* Estilo específico para el botón Cash Out */
+/**
+ * BOTÓN CASH OUT ESPECIAL
+ * ======================
+ * 
+ * Botón específico para retirar dinero con diseño llamativo rojo.
+ */
 #cashOut {
-  background: linear-gradient(135deg, #8b0000 0%, #a22b2b 100%);
-  color: var(--color-background);
-  border: none;
-  font-weight: var(--font-weight-semibold);
-  padding: var(--space-10) var(--space-20);
-  border-radius: var(--radius-sm);
-  transition: all var(--duration-normal) var(--ease-standard);
-}
-#cashOut:hover:not(:disabled) {
-  background: linear-gradient(135deg, #a22b2b 0%, #8b0000 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
-}
-#cashOut:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
+  background: linear-gradient(135deg, #8b0000 0%, #a22b2b 100%);  /* Gradiente rojo */
+  color: var(--color-background);       /* Texto negro sobre rojo */
+  border: none;                         /* Sin borde */
+  font-weight: var(--font-weight-semibold);  /* Texto semi-bold */
+  padding: var(--space-10) var(--space-20);  /* Padding generoso */
+  border-radius: var(--radius-sm);      /* Bordes ligeramente redondeados */
+  transition: all var(--duration-normal) var(--ease-standard);  /* Transiciones suaves */
 }
 
-/* Form elements */
+/* Efectos hover del botón Cash Out */
+#cashOut:hover:not(:disabled) {
+  background: linear-gradient(135deg, #a22b2b 0%, #8b0000 100%);  /* Gradiente invertido */
+  transform: translateY(-2px);          /* Efecto de elevación */
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);  /* Sombra roja */
+}
+
+/* Estado deshabilitado del botón Cash Out */
+#cashOut:disabled {
+  opacity: 0.5;                         /* Transparencia reducida */
+  cursor: not-allowed;                  /* Cursor de prohibido */
+  background: var(--color-surface);     /* Fondo neutro */
+  color: var(--color-text-secondary);   /* Texto secundario */
+}
+
+/**
+ * ELEMENTOS DE FORMULARIO
+ * ======================
+ * 
+ * Inputs, labels y controles de formulario con estados de focus
+ * y validación consistentes.
+ */
+
+/* Clase base para controles de formulario */
 .form-control {
-  display: block;
-  width: 100%;
-  padding: var(--space-8) var(--space-12);
-  font-size: var(--font-size-md);
-  line-height: 1.5;
-  color: var(--color-text);
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-base);
+  display: block;                       /* Elemento de bloque */
+  width: 100%;                          /* Ancho completo */
+  padding: var(--space-8) var(--space-12);  /* Padding interno */
+  font-size: var(--font-size-md);       /* Tamaño de fuente mediano */
+  line-height: 1.5;                     /* Altura de línea */
+  color: var(--color-text);             /* Color de texto */
+  background-color: var(--color-surface);  /* Fondo de superficie */
+  border: 1px solid var(--color-border);   /* Borde sutil */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
   transition:
     border-color var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    box-shadow var(--duration-fast) var(--ease-standard);  /* Transiciones suaves */
 }
 
+/* Estado de foco para controles */
 .form-control:focus {
-  border-color: var(--color-primary);
-  outline: var(--focus-outline);
+  border-color: var(--color-primary);   /* Borde dorado en foco */
+  outline: var(--focus-outline);        /* Outline accesible */
 }
 
+/* Etiquetas de formulario */
 .form-label {
-  display: block;
-  margin-bottom: var(--space-8);
-  font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
+  display: block;                       /* Elemento de bloque */
+  margin-bottom: var(--space-8);       /* Espaciado inferior */
+  font-weight: var(--font-weight-medium);  /* Peso medio */
+  font-size: var(--font-size-sm);      /* Tamaño pequeño */
 }
 
+/* Agrupación de elementos de formulario */
 .form-group {
-  margin-bottom: var(--space-16);
+  margin-bottom: var(--space-16);      /* Espaciado entre grupos */
 }
 
-/* Card component */
+/**
+ * COMPONENTE CARD
+ * ==============
+ * 
+ * Contenedor base para mostrar contenido agrupado con sombra
+ * y fondo de superficie.
+ */
 .card {
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition: box-shadow var(--duration-normal) var(--ease-standard);
+  background-color: var(--color-surface);  /* Fondo de superficie */
+  box-shadow: var(--shadow-sm);         /* Sombra sutil */
+  overflow: hidden;                     /* Contenido que no desborde */
+  transition: box-shadow var(--duration-normal) var(--ease-standard);  /* Transición de sombra */
 }
 
-/* Container layout */
+/**
+ * SISTEMA DE LAYOUT - CONTENEDOR
+ * ==============================
+ * 
+ * Contenedor principal con márgenes automáticos y padding responsivo.
+ */
 .container {
-  width: 100%;
-  margin-right: auto;
-  margin-left: auto;
-  padding-right: var(--space-16);
-  padding-left: var(--space-16);
-  background-color:rgba(0, 0, 0, 0.5);
+  width: 100%;                          /* Ancho completo */
+  margin-right: auto;                   /* Centrado automático */
+  margin-left: auto;                    /* Centrado automático */
+  padding-right: var(--space-16);      /* Padding lateral */
+  padding-left: var(--space-16);       /* Padding lateral */
+  background-color:rgba(0, 0, 0, 0.5); /* Fondo semi-transparente */
 }
 
+/* Breakpoints responsivos para el contenedor */
 @media (min-width: 640px) {
   .container {
-    max-width: var(--container-sm);
+    max-width: var(--container-sm);     /* Máximo en móvil grande */
   }
 }
 @media (min-width: 768px) {
   .container {
-    max-width: var(--container-md);
+    max-width: var(--container-md);     /* Máximo en tablet */
   }
 }
 @media (min-width: 1024px) {
   .container {
-    max-width: var(--container-lg);
+    max-width: var(--container-lg);     /* Máximo en laptop */
   }
 }
 @media (min-width: 1280px) {
   .container {
-    max-width: var(--container-xl);
+    max-width: var(--container-xl);     /* Máximo en desktop */
   }
 }
 
-/* Utility classes */
+/**
+ * CLASES UTILITARIAS
+ * ==================
+ * 
+ * Clases helper para funcionalidades comunes.
+ */
 .hidden {
-  display: none;
+  display: none;                        /* Ocultar completamente */
 }
 
-/* Accessibility */
+/**
+ * ACCESIBILIDAD
+ * =============
+ * 
+ * Estilos para mejorar la accesibilidad del sitio.
+ */
 :focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: 2px;
+  outline: var(--focus-outline);        /* Outline visible */
+  outline-offset: 2px;                  /* Separación del elemento */
 }
 
+/* Carga de fuente personalizada */
 @font-face {
   font-family: "FKGroteskNeue";
   src: url("https://r2cdn.perplexity.ai/fonts/FKGroteskNeue.woff2")
     format("woff2");
 }
 
-/* Game-specific styles */
+/**
+ * ===============================================
+ * ESTILOS ESPECÍFICOS DEL JUEGO DIAMOND MINES
+ * ===============================================
+ * 
+ * Todas las clases y estilos específicos para el juego,
+ * incluyendo layout, tablero, controles y estados.
+ */
+
+/* Configuración del body para el juego */
 body {
- background-image: url('./assets/fondo.png');
+ background-image: url('./assets/fondo.png');  /* Imagen de fondo del casino */
   background-size: cover;       /* Ajusta la imagen al tamaño del contenedor */
   background-repeat: no-repeat; /* Evita que se repita */
-  background-position: center;  /* Centra la imagen */  min-height: 100vh;
-  font-family: var(--font-family-base);
+  background-position: center;  /* Centra la imagen */  
+  min-height: 100vh;            /* Altura mínima de viewport */
+  font-family: var(--font-family-base);  /* Fuente base */
 }
 
+/* Contenedor específico del juego */
 .container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: var(--space-20);
+  max-width: 800px;             /* Máximo ancho del juego */
+  margin: 0 auto;               /* Centrado automático */
+  padding: var(--space-20);     /* Padding generoso */
 }
 
-/* Header */
+/**
+ * HEADER DEL JUEGO
+ * ===============
+ */
 .game-header {
-  text-align: center;
-  margin-bottom: var(--space-32);
+  text-align: center;           /* Centrado del texto */
+  margin-bottom: var(--space-32);  /* Espaciado inferior grande */
 }
 
+/* Título principal del juego */
 .game-title {
-  font-size: var(--font-size-4xl);
-  color: var(--color-primary);
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-  margin-bottom: var(--space-8);
+  font-size: var(--font-size-4xl);      /* Tamaño extra grande */
+  color: var(--color-primary);          /* Color dorado */
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);  /* Sombra dorada brillante */
+  margin-bottom: var(--space-8);        /* Espaciado inferior */
 }
 
+/* Subtítulo del juego */
 .game-subtitle {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
-  margin: 0;
+  color: var(--color-text-secondary);   /* Color secundario */
+  font-size: var(--font-size-lg);       /* Tamaño grande */
+  margin: 0;                            /* Sin margen */
 }
 
-/* Configuration Panel */
+/**
+ * PANEL DE CONFIGURACIÓN
+ * ======================
+ */
 .config-panel {
-  margin-bottom: var(--space-24);
+  margin-bottom: var(--space-24);       /* Espaciado inferior */
 }
 
+/* Selector de número de minas */
 .mines-selector {
-  display: flex;
-  gap: var(--space-16);
-  margin-bottom: var(--space-16);
+  display: flex;                        /* Layout flex */
+  gap: var(--space-16);                 /* Espaciado entre elementos */
+  margin-bottom: var(--space-16);       /* Espaciado inferior */
 }
 
+/* Opciones de radio para selección de minas */
 .radio-option {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  padding: var(--space-8) var(--space-16);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-base);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-standard);
-  background: var(--color-surface);
+  display: flex;                        /* Layout flex */
+  align-items: center;                  /* Centrado vertical */
+  gap: var(--space-8);                  /* Espaciado entre elementos */
+  padding: var(--space-8) var(--space-16);  /* Padding interno */
+  border: 2px solid var(--color-border);    /* Borde sutil */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  cursor: pointer;                      /* Cursor de mano */
+  transition: all var(--duration-normal) var(--ease-standard);  /* Transiciones suaves */
+  background: var(--color-surface);     /* Fondo de superficie */
 }
 
+/* Estado hover de las opciones de radio */
 .radio-option:hover {
-  border-color: var(--color-primary);
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--color-primary);   /* Borde dorado en hover */
+  background: rgba(255, 215, 0, 0.1);   /* Fondo dorado transparente */
 }
 
+/* Color personalizado para radio buttons */
 .radio-option input[type="radio"] {
-  accent-color: #00ff88;
+  accent-color: #00ff88;                /* Color verde para el radio */
 }
 
+/* Estilo del texto cuando el radio está seleccionado */
 .radio-option input[type="radio"]:checked + span {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);          /* Texto dorado */
+  font-weight: var(--font-weight-semibold);  /* Peso semi-bold */
 }
 
+/* Estilo del contenedor cuando el radio está seleccionado */
 .radio-option:has(input[type="radio"]:checked) {
-  border-color: var(--color-primary);
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--color-primary);   /* Borde dorado */
+  background: rgba(255, 215, 0, 0.1);   /* Fondo dorado transparente */
 }
 
-/* Bet Controls */
+/**
+ * CONTROLES DE APUESTA
+ * ====================
+ */
 .bet-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  margin-bottom: var(--space-16);
+  display: flex;                        /* Layout flex */
+  align-items: center;                  /* Centrado vertical */
+  gap: var(--space-8);                  /* Espaciado entre elementos */
+  margin-bottom: var(--space-16);       /* Espaciado inferior */
 }
 
+/* Botones de incremento/decremento de apuesta */
 .bet-btn {
-  width: 50px;
-  height: 40px;
-  border: 2px solid var(--color-primary);
-  background: transparent;
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
-  transition: all var(--duration-normal) var(--ease-standard);
+  width: 50px;                          /* Ancho fijo */
+  height: 40px;                         /* Altura fija */
+  border: 2px solid var(--color-primary);  /* Borde dorado */
+  background: transparent;              /* Fondo transparente */
+  color: var(--color-primary);          /* Texto dorado */
+  font-weight: var(--font-weight-bold); /* Texto bold */
+  transition: all var(--duration-normal) var(--ease-standard);  /* Transiciones suaves */
 }
 
+/* Estado hover de los botones de apuesta */
 .bet-btn:hover {
-  background: var(--color-primary);
-  color: var(--color-background);
+  background: var(--color-primary);     /* Fondo dorado en hover */
+  color: var(--color-background);       /* Texto negro en hover */
 }
 
+/* Input de cantidad de apuesta */
 .bet-input {
-  flex: 1;
-  text-align: center;
-  font-weight: var(--font-weight-semibold);
-  border: 2px solid var(--color-border);
+  flex: 1;                              /* Ocupa el espacio restante */
+  text-align: center;                   /* Texto centrado */
+  font-weight: var(--font-weight-semibold);  /* Peso semi-bold */
+  border: 2px solid var(--color-border);     /* Borde sutil */
 }
 
-/* Game Controls */
+/**
+ * CONTROLES DEL JUEGO
+ * ===================
+ */
 .game-controls {
-  display: flex;
-  gap: var(--space-12);
+  display: flex;                        /* Layout flex */
+  gap: var(--space-12);                 /* Espaciado entre elementos */
 }
 
+/* Variante primaria específica del juego */
 .btn--primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-  color: var(--color-background);
-  border: none;
-  font-weight: var(--font-weight-semibold);
-  transition: all var(--duration-normal) var(--ease-standard);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);  /* Gradiente dorado */
+  color: var(--color-background);       /* Texto negro */
+  border: none;                         /* Sin borde */
+  font-weight: var(--font-weight-semibold);  /* Peso semi-bold */
+  transition: all var(--duration-normal) var(--ease-standard);  /* Transiciones suaves */
 }
 
+/* Estado hover del botón primario */
 .btn--primary:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  background: var(--color-primary-hover);     /* Fondo dorado más claro */
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);  /* Sombra dorada */
 }
 
+/* Variante secundaria específica del juego */
 .btn--secondary {
-  background: transparent;
-  border: 2px solid #ff6b35;
-  color: #ff6b35;
-  font-weight: var(--font-weight-semibold);
+  background: transparent;              /* Fondo transparente */
+  border: 2px solid #ff6b35;           /* Borde naranja */
+  color: #ff6b35;                      /* Texto naranja */
+  font-weight: var(--font-weight-semibold);  /* Peso semi-bold */
 }
 
+/* Estado hover del botón secundario */
 .btn--secondary:hover:not(:disabled) {
-  background: #ff6b35;
-  color: var(--color-background);
+  background: #ff6b35;                 /* Fondo naranja en hover */
+  color: var(--color-background);      /* Texto negro en hover */
 }
 
+/* Estado deshabilitado general */
 .btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
+  opacity: 0.4;                        /* Transparencia reducida */
+  cursor: not-allowed;                 /* Cursor de prohibido */
+  transform: none;                     /* Sin transformaciones */
 }
 
-/* Game Board */
+/**
+ * TABLERO DE JUEGO
+ * ===============
+ */
+/* Contenedor del tablero de juego */
 .game-board-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: var(--space-24);
+  display: flex;                        /* Layout flex */
+  justify-content: center;              /* Centrado horizontal */
+  margin-bottom: var(--space-24);       /* Espaciado inferior */
 }
 
+/* Tablero de juego con grid de 5x5 */
 .game-board {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: var(--space-12);
-  padding: var(--space-24);
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: var(--radius-lg);
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  display: grid;                        /* Layout grid */
+  grid-template-columns: repeat(5, 1fr); /* 5 columnas iguales */
+  gap: var(--space-12);                 /* Espaciado entre celdas */
+  padding: var(--space-24);             /* Padding interno */
+  background: rgba(0, 0, 0, 0.3);       /* Fondo negro semi-transparente */
+  border-radius: var(--radius-lg);      /* Bordes redondeados grandes */
+  border: 2px solid rgba(255, 215, 0, 0.2);  /* Borde dorado sutil */
 }
 
+/* Celda individual del tablero */
 .game-cell {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #333 0%, #444 100%);
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius-base);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-  font-size: var(--font-size-2xl);
-  position: relative;
-  overflow: hidden;
-}
-.game-cell:hover:not(.revealed):not(.disabled) {
-  border-color: var(--color-primary);
-  background: linear-gradient(135deg, #444 0%, #555 100%);
-  transform: scale(1.05);
-  box-shadow: 0 0 15px var(--color-primary);
+  width: 80px;                          /* Ancho fijo */
+  height: 80px;                         /* Altura fija (cuadrada) */
+  background: linear-gradient(135deg, #333 0%, #444 100%);  /* Gradiente gris */
+  border: 2px solid var(--color-border);    /* Borde sutil */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  display: flex;                        /* Layout flex */
+  align-items: center;                  /* Centrado vertical */
+  justify-content: center;              /* Centrado horizontal */
+  cursor: pointer;                      /* Cursor de mano */
+  transition: all 0.2s cubic-bezier(0.16,1,0.3,1);  /* Transiciones rápidas */
+  font-size: var(--font-size-2xl);      /* Tamaño de fuente grande */
+  position: relative;                   /* Para pseudo-elementos */
+  overflow: hidden;                     /* Contenido que no desborde */
 }
 
+/* Estado hover de las celdas no reveladas */
+.game-cell:hover:not(.revealed):not(.disabled) {
+  border-color: var(--color-primary);   /* Borde dorado en hover */
+  background: linear-gradient(135deg, #444 0%, #555 100%);  /* Gradiente más claro */
+  transform: scale(1.05);               /* Escalado ligero */
+  box-shadow: 0 0 15px var(--color-primary);  /* Resplandor dorado */
+}
+
+/* Estado revelado de las celdas */
 .game-cell.revealed {
-  cursor: default;
-  transform: scale(1);
+  cursor: default;                      /* Cursor por defecto */
+  transform: scale(1);                  /* Sin escalado */
 }
+
+/* Celda con diamante (ganadora) */
 .game-cell.diamond {
-  background: linear-gradient(135deg, var(--color-primary) 0%, #fffbe6 100%);
-  color: var(--color-primary-active);
-  border-color: var(--color-primary);
-  animation: diamondReveal 0.5s ease-out;
+  background: linear-gradient(135deg, var(--color-primary) 0%, #fffbe6 100%);  /* Gradiente dorado claro */
+  color: var(--color-primary-active);   /* Texto dorado oscuro */
+  border-color: var(--color-primary);   /* Borde dorado */
+  animation: diamondReveal 0.5s ease-out;  /* Animación de revelado */
 }
+
+/* Celda con mina (perdedora) */
 .game-cell.mine {
-  background: linear-gradient(135deg, var(--color-error) 0%, #8b0000 100%);
-  color: #fff;
-  border-color: var(--color-error);
-  box-shadow: 0 0 12px rgba(139, 0, 0, 0.8), inset 0 0 8px rgba(255, 0, 0, 0.6);
-  animation: mineReveal 0.6s ease-out;
+  background: linear-gradient(135deg, var(--color-error) 0%, #8b0000 100%);  /* Gradiente rojo */
+  color: #fff;                          /* Texto blanco */
+  border-color: var(--color-error);     /* Borde rojo */
+  box-shadow: 0 0 12px rgba(139, 0, 0, 0.8), inset 0 0 8px rgba(255, 0, 0, 0.6);  /* Sombras rojas */
+  animation: mineReveal 0.6s ease-out;  /* Animación de revelado */
 }
+
+/* Estado deshabilitado de las celdas */
 .game-cell.disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+  cursor: not-allowed;                  /* Cursor de prohibido */
+  opacity: 0.6;                        /* Transparencia reducida */
 }
+
+/**
+ * ANIMACIONES DEL TABLERO
+ * =======================
+ */
+
+/* Animación para revelar diamantes */
 @keyframes diamondReveal {
   0% {
-    transform: scale(0.8);
-    opacity: 0;
+    transform: scale(0.8);              /* Inicio pequeño */
+    opacity: 0;                         /* Invisible */
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.1);              /* Escalado máximo */
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: scale(1);                /* Tamaño final normal */
+    opacity: 1;                         /* Completamente visible */
   }
 }
 
+/* Animación para revelar minas */
 @keyframes mineReveal {
   0% {
-    transform: scale(0.5);
-    opacity: 0;
-    filter: drop-shadow(0 0 0 rgba(139, 0, 0, 0));
+    transform: scale(0.5);              /* Inicio muy pequeño */
+    opacity: 0;                         /* Invisible */
+    filter: drop-shadow(0 0 0 rgba(139, 0, 0, 0));  /* Sin sombra */
   }
   50% {
-    transform: scale(1.3);
-    filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.6));
+    transform: scale(1.3);              /* Escalado máximo */
+    filter: drop-shadow(0 0 20px rgba(139, 0, 0, 0.6));  /* Sombra roja intensa */
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
-    filter: drop-shadow(0 0 10px rgba(139, 0, 0, 0.4));
+    transform: scale(1);                /* Tamaño final normal */
+    opacity: 1;                         /* Completamente visible */
+    filter: drop-shadow(0 0 10px rgba(139, 0, 0, 0.4));  /* Sombra roja suave */
   }
 }
 
-/* Info Panel */
+/**
+ * PANEL DE INFORMACIÓN
+ * ===================
+ */
 .info-panel {
-  margin-bottom: var(--space-24);
-  background-color: rgba(0, 0, 0, 0.2);
-  padding: var(--space-16);
-  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-24);       /* Espaciado inferior */
+  background-color: rgba(0, 0, 0, 0.2);  /* Fondo negro semi-transparente */
+  padding: var(--space-16);             /* Padding interno */
+  border-radius: var(--radius-lg);      /* Bordes redondeados grandes */
 }
 
+/* Grid de información del juego */
 .info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-16);
-  margin-bottom: var(--space-16);
+  display: grid;                        /* Layout grid */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));  /* Columnas adaptables */
+  gap: var(--space-16);                 /* Espaciado entre elementos */
+  margin-bottom: var(--space-16);       /* Espaciado inferior */
 }
 
+/* Elemento individual de información */
 .info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-12);
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-base);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;                        /* Layout flex */
+  justify-content: space-between;       /* Espaciado entre label y valor */
+  align-items: center;                  /* Centrado vertical */
+  padding: var(--space-12);             /* Padding interno */
+  background: rgba(0, 0, 0, 0.2);       /* Fondo negro semi-transparente */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  border: 1px solid rgba(255, 215, 0, 0.2);  /* Borde dorado sutil */
 }
 
+/* Etiqueta de información */
 .info-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);   /* Color secundario */
+  font-size: var(--font-size-sm);       /* Tamaño pequeño */
 }
 
+/* Valor de información */
 .info-value {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-lg);
+  color: var(--color-primary);          /* Color dorado */
+  font-weight: var(--font-weight-bold); /* Peso bold */
+  font-size: var(--font-size-lg);       /* Tamaño grande */
 }
 
+/* Mensaje de estado del juego */
 .status-message {
-  text-align: center;
-  padding: var(--space-16);
-  background: rgba(255, 215, 0, 0.1);
-  border-radius: var(--radius-base);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-lg);
+  text-align: center;                   /* Texto centrado */
+  padding: var(--space-16);             /* Padding interno */
+  background: rgba(255, 215, 0, 0.1);    /* Fondo dorado transparente */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  border: 1px solid rgba(255, 215, 0, 0.3);  /* Borde dorado */
+  color: var(--color-primary);          /* Texto dorado */
+  font-weight: var(--font-weight-semibold);  /* Peso semi-bold */
+  font-size: var(--font-size-lg);       /* Tamaño grande */
 }
 
+/* Estado de victoria */
 .status-message.won {
-  background: rgba(0, 255, 136, 0.2);
-  color: #00ff88;
+  background: rgba(0, 255, 136, 0.2);   /* Fondo verde transparente */
+  color: #00ff88;                       /* Texto verde brillante */
 }
 
+/* Estado de derrota */
 .status-message.lost {
-  background: rgba(255, 68, 68, 0.2);
-  color: #ff4444;
-  border-color: rgba(255, 68, 68, 0.3);
+  background: rgba(255, 68, 68, 0.2);   /* Fondo rojo transparente */
+  color: #ff4444;                       /* Texto rojo */
+  border-color: rgba(255, 68, 68, 0.3); /* Borde rojo */
 }
 
+/* Estado de cobro exitoso */
 .status-message.cashed-out {
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-  border-color: rgba(255, 193, 7, 0.3);
+  background: rgba(255, 193, 7, 0.2);   /* Fondo amarillo transparente */
+  color: #ffc107;                       /* Texto amarillo */
+  border-color: rgba(255, 193, 7, 0.3); /* Borde amarillo */
 }
 
-/* Instructions */
+/**
+ * SECCIÓN DE INSTRUCCIONES
+ * ========================
+ */
 .instructions {
-  background: rgba(0, 0, 0, 0.2);
-  padding: var(--space-16);
-  border-radius: var(--radius-lg);
+  background: rgba(0, 0, 0, 0.2);       /* Fondo negro semi-transparente */
+  padding: var(--space-16);             /* Padding interno */
+  border-radius: var(--radius-lg);      /* Bordes redondeados grandes */
 }
 
+/* Título de las instrucciones */
 .instructions h4 {
-  color: var(--color-primary);
-  margin-bottom: var(--space-12);
+  color: var(--color-primary);          /* Color dorado */
+  margin-bottom: var(--space-12);       /* Espaciado inferior */
 }
 
+/* Lista de instrucciones sin viñetas */
 .instructions ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  list-style: none;                     /* Sin viñetas por defecto */
+  padding: 0;                           /* Sin padding */
+  margin: 0;                            /* Sin margen */
 }
 
+/* Elementos individuales de la lista */
 .instructions li {
-  padding: var(--space-4) 0;
-  color: var(--color-text-secondary);
-  position: relative;
-  padding-left: var(--space-20);
+  padding: var(--space-4) 0;            /* Padding vertical */
+  color: var(--color-text-secondary);   /* Color secundario */
+  position: relative;                   /* Para pseudo-elemento */
+  padding-left: var(--space-20);        /* Espacio para el ícono */
 }
 
+/* Ícono de diamante antes de cada instrucción */
 .instructions li::before {
-  content: " ♦️ ";
-  position: absolute;
-  left: 0;
-  top: var(--space-4);
+  content: " ♦️ ";                      /* Emoji de diamante */
+  position: absolute;                   /* Posicionamiento absoluto */
+  left: 0;                              /* Alineado a la izquierda */
+  top: var(--space-4);                  /* Centrado verticalmente */
 }
 
-/* Modal styles */
+/**
+ * SISTEMA DE MODALES
+ * ==================
+ * 
+ * Overlay y contenido para ventanas modales del juego.
+ */
+
+/* Overlay del modal que cubre toda la pantalla */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(5px);
+  position: fixed;                      /* Posición fija */
+  top: 0;                               /* Desde arriba */
+  left: 0;                              /* Desde la izquierda */
+  width: 100%;                          /* Ancho completo */
+  height: 100%;                         /* Altura completa */
+  background-color: rgba(0, 0, 0, 0.8); /* Fondo negro semi-transparente */
+  display: flex;                        /* Layout flex */
+  justify-content: center;              /* Centrado horizontal */
+  align-items: center;                  /* Centrado vertical */
+  z-index: 1000;                       /* Nivel alto de z-index */
+  backdrop-filter: blur(5px);           /* Desenfoque del fondo */
 }
 
+/* Estado oculto del modal */
 .modal-overlay.hidden {
-  display: none;
+  display: none;                        /* Completamente oculto */
 }
 
+/* Contenido del modal */
 .modal-content {
-  background: var(--color-surface);
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-lg);
-  padding: 0;
-  max-width: 500px;
-  width: 90%;
-  max-height: 90vh;
-  overflow: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  animation: modalSlideIn 0.3s ease-out;
+  background: var(--color-surface);     /* Fondo de superficie */
+  border: 2px solid var(--color-primary);  /* Borde dorado */
+  border-radius: var(--radius-lg);      /* Bordes redondeados grandes */
+  padding: 0;                           /* Sin padding (se maneja internamente) */
+  max-width: 500px;                     /* Ancho máximo */
+  width: 90%;                           /* Ancho responsivo */
+  max-height: 90vh;                     /* Altura máxima */
+  overflow: auto;                       /* Scroll si es necesario */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);  /* Sombra dramática */
+  animation: modalSlideIn 0.3s ease-out;       /* Animación de entrada */
 }
 
+/* Animación de entrada del modal */
 @keyframes modalSlideIn {
   from {
-    transform: translateY(-50px);
-    opacity: 0;
+    transform: translateY(-50px);       /* Desde arriba */
+    opacity: 0;                         /* Invisible */
   }
   to {
-    transform: translateY(0);
-    opacity: 1;
+    transform: translateY(0);           /* Posición final */
+    opacity: 1;                         /* Completamente visible */
   }
 }
 
+/* Header del modal */
 .modal-header {
-  padding: var(--space-20);
-  text-align: center;
-  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-20);             /* Padding generoso */
+  text-align: center;                   /* Texto centrado */
+  border-bottom: 1px solid var(--color-border);  /* Línea separadora */
 }
 
+/* Título del modal */
 .modal-header h2 {
-  color: var(--color-primary);
-  margin: 0;
-  font-size: var(--font-size-3xl);
+  color: var(--color-primary);          /* Color dorado */
+  margin: 0;                            /* Sin margen */
+  font-size: var(--font-size-3xl);      /* Tamaño extra grande */
 }
 
+/* Cuerpo del modal */
 .modal-body {
-  padding: var(--space-20);
-  text-align: center;
+  padding: var(--space-20);             /* Padding generoso */
+  text-align: center;                   /* Texto centrado */
 }
 
+/* Párrafos del modal */
 .modal-body p {
-  margin-bottom: var(--space-16);
-  font-size: var(--font-size-lg);
-  color: var(--color-text);
+  margin-bottom: var(--space-16);       /* Espaciado inferior */
+  font-size: var(--font-size-lg);       /* Tamaño grande */
+  color: var(--color-text);             /* Color de texto */
 }
 
+/* Texto en negrita del modal */
 .modal-body strong {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);          /* Color dorado */
+  font-weight: var(--font-weight-bold); /* Peso bold */
 }
 
+/* Pantalla de cuenta regresiva */
 .countdown-display {
-  margin: var(--space-20) 0;
-  padding: var(--space-16);
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-base);
-  font-size: var(--font-size-xl);
+  margin: var(--space-20) 0;            /* Margen vertical */
+  padding: var(--space-16);             /* Padding interno */
+  background: rgba(255, 215, 0, 0.1);   /* Fondo dorado transparente */
+  border: 1px solid var(--color-primary);   /* Borde dorado */
+  border-radius: var(--radius-base);    /* Bordes redondeados */
+  font-size: var(--font-size-xl);       /* Tamaño extra grande */
 }
 
+/* Número de la cuenta regresiva */
 .countdown-number {
-  color: var(--color-primary);
-  font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-2xl);
+  color: var(--color-primary);          /* Color dorado */
+  font-weight: var(--font-weight-bold); /* Peso bold */
+  font-size: var(--font-size-2xl);      /* Tamaño muy grande */
 }
 
+/* Footer del modal */
 .modal-footer {
-  padding: var(--space-20);
-  border-top: 1px solid var(--color-border);
+  padding: var(--space-20);             /* Padding generoso */
+  border-top: 1px solid var(--color-border);  /* Línea separadora superior */
 }
 
-/* Responsive Design */
+/**
+ * ===========================
+ * DISEÑO RESPONSIVO
+ * ===========================
+ * 
+ * Adaptaciones para diferentes tamaños de pantalla,
+ * optimizando la experiencia en dispositivos móviles.
+ */
+
+/* Tablets y móviles grandes (máximo 768px) */
 @media (max-width: 768px) {
   .container {
-    padding: var(--space-16);
+    padding: var(--space-16);           /* Padding reducido */
   }
 
   .game-title {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-3xl);    /* Título más pequeño */
   }
 
   .mines-selector {
-    flex-direction: column;
-    gap: var(--space-8);
+    flex-direction: column;             /* Layout vertical */
+    gap: var(--space-8);                /* Espaciado reducido */
   }
 
   .game-cell {
-    width: 70px;
-    height: 70px;
-    font-size: var(--font-size-xl);
+    width: 70px;                        /* Celdas más pequeñas */
+    height: 70px;                       /* Altura reducida */
+    font-size: var(--font-size-xl);     /* Fuente más pequeña */
   }
 
   .info-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);  /* Solo 2 columnas en tablet */
   }
 }
 
+/* Móviles pequeños (máximo 480px) */
 @media (max-width: 480px) {
   .game-cell {
-    width: 65px;
-    height: 65px;
-    font-size: var(--font-size-lg);
+    width: 65px;                        /* Celdas aún más pequeñas */
+    height: 65px;                       /* Altura reducida */
+    font-size: var(--font-size-lg);     /* Fuente más pequeña */
   }
 
   .game-board {
-    gap: var(--space-8);
-    padding: var(--space-16);
+    gap: var(--space-8);                /* Espaciado mínimo entre celdas */
+    padding: var(--space-16);           /* Padding reducido del tablero */
   }
 }
+
+/**
+ * ===========================
+ * FIN DEL ARCHIVO CSS
+ * ===========================
+ * 
+ * Este archivo contiene todos los estilos necesarios para
+ * el juego Diamond Mines, incluyendo:
+ * 
+ * - Sistema de variables CSS personalizadas
+ * - Estilos base y tipográficos
+ * - Componentes reutilizables (botones, formularios, modales)
+ * - Estilos específicos del juego (tablero, celdas, animaciones)
+ * - Sistema responsivo para diferentes dispositivos
+ * 
+ * Última actualización: Documentación completa en español
+ */
