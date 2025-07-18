@@ -11,6 +11,8 @@
  * - Manipulación de minas basada en el balance del jugador
  * - Sistema de rangos dinámicos INVISIBLE con aumento paulatino de espacios
  * - Sistema de control de rachas en rango aleatorio
+ * - Sistema de probabilidades dinámicas según balance
+ * - Sistema de normalización por tiradas (20 tiradas aprox)
  * - Modal de límite máximo cuando se alcanzan $100.000
  * - Multiplicadores dinámicos basados en riesgo
  * - Protección contra balance cero (mínimo 5k)
@@ -42,11 +44,50 @@ const GAME_CONFIG = {
     },
     defaultMaxSpaces: 3, // Valor por defecto
   },
-  // ✅ NUEVO: Control de rachas en rango aleatorio
+  // ✅ Control de rachas en rango aleatorio
   streakControl: {
     maxConsecutiveCashouts: 3, // Máximo 3 cashouts seguidos
     forceEarlyLoss: true, // Forzar pérdida temprana cuando se active
     resetOnLoss: true, // Resetear contador al perder
+  },
+  // ✅ Rangos dinámicos para rango aleatorio (balance > 40k)
+  randomRangeControl: {
+    probabilityRanges: {
+      // Rangos de balance y sus probabilidades de pérdida
+      90000: {
+        lossChance: 0.75,
+        description: "Balance muy alto - 75% prob. pérdida",
+      },
+      80000: {
+        lossChance: 0.65,
+        description: "Balance alto - 65% prob. pérdida",
+      },
+      70000: {
+        lossChance: 0.55,
+        description: "Balance medio-alto - 55% prob. pérdida",
+      },
+      60000: {
+        lossChance: 0.45,
+        description: "Balance medio - 45% prob. pérdida",
+      },
+      50000: {
+        lossChance: 0.35,
+        description: "Balance bajo - 35% prob. pérdida",
+      },
+      40000: {
+        lossChance: 0.25,
+        description: "Balance mínimo - 25% prob. pérdida",
+      },
+    },
+    defaultLossChance: 0.25, // Probabilidad por defecto
+    enableDynamicLoss: true, // Activar sistema dinámico
+  },
+  // ✅ NUEVO: Sistema de normalización por tiradas
+  normalization: {
+    gameThreshold: 20, // Número de tiradas para normalizar
+    resetProbabilities: true, // Resetear probabilidades al normalizar
+    maintainOtherSystems: true, // Mantener otros sistemas activos
+    enableNormalization: true, // Activar sistema de normalización
   },
   // Sistema de multiplicadores
   multipliers: {
@@ -89,6 +130,8 @@ const GAME_STATES = {
  * - Balance del jugador y apuestas
  * - Sistema de rangos dinámicos de manipulación (INVISIBLE)
  * - Sistema de control de rachas en rango aleatorio
+ * - Sistema de probabilidades dinámicas
+ * - Sistema de normalización por tiradas
  * - Sistema de victoria asegurada con límite variable
  * - Interfaz de usuario y eventos
  * - Sistema modal de límites
@@ -122,10 +165,15 @@ class DiamondMinesGame {
     this.manipulationActive = false; // Si el sistema está activo
     this.consecutiveWins = 0; // Victorias consecutivas en el sistema
 
-    // ✅ NUEVAS VARIABLES para control de rachas en rango aleatorio
+    // Variables para control de rachas en rango aleatorio
     this.consecutiveCashouts = 0; // Contador de cashouts seguidos
     this.forceNextLoss = false; // Bandera para forzar pérdida en próxima partida
     this.maxConsecutiveCashouts = 3; // Límite máximo de cashouts seguidos (3-4)
+
+    // ✅ NUEVAS VARIABLES para control de tiradas y normalización
+    this.totalGames = 0; // Contador total de tiradas/partidas
+    this.normalizationThreshold = 20; // Umbral para normalizar (20 tiradas aprox)
+    this.systemNormalized = false; // Si el sistema está normalizado
 
     // Inicializar el juego
     this.initializeGame();
@@ -242,8 +290,8 @@ class DiamondMinesGame {
   }
 
   /**
-   * Inicia una nueva partida
-   * Valida la apuesta, descuenta del balance y configura el tablero
+   * ✅ ACTUALIZADO: Inicia una nueva partida
+   * Ahora incluye el contador de tiradas y normalización
    */
   startGame() {
     const betInput = document.getElementById("betAmount");
@@ -263,6 +311,9 @@ class DiamondMinesGame {
       );
       return;
     }
+
+    // ✅ NUEVO: Incrementar contador de tiradas y verificar normalización
+    this.incrementGameCounter();
 
     // Configurar estado de la nueva partida
     this.currentBet = betAmount;
@@ -293,7 +344,65 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ NUEVO: Controla las rachas de cashouts en el rango aleatorio
+   * ✅ NUEVO: Controla la normalización del sistema basada en tiradas
+   * Desactiva las probabilidades dinámicas después de ~20 tiradas
+   * Mantiene otros sistemas activos (rangos dinámicos y control de rachas)
+   */
+  checkSystemNormalization() {
+    // Solo verificar si el sistema de normalización está habilitado
+    if (!GAME_CONFIG.normalization.enableNormalization) {
+      return;
+    }
+
+    // Verificar si se alcanzó el umbral de tiradas
+    if (
+      this.totalGames >= GAME_CONFIG.normalization.gameThreshold &&
+      !this.systemNormalized
+    ) {
+      this.systemNormalized = true;
+
+      // Deshabilitar probabilidades dinámicas
+      if (GAME_CONFIG.normalization.resetProbabilities) {
+        GAME_CONFIG.randomRangeControl.enableDynamicLoss = false;
+      }
+
+      // Log interno para debugging (invisible para el usuario)
+      console.log(`Sistema normalizado después de ${this.totalGames} tiradas`);
+    }
+  }
+
+  /**
+   * ✅ NUEVO: Incrementa el contador de tiradas
+   * Se llama al inicio de cada nueva partida
+   */
+  incrementGameCounter() {
+    this.totalGames++;
+    this.checkSystemNormalization();
+  }
+
+  /**
+   * ✅ NUEVO: Obtiene información del estado del sistema
+   * Útil para debugging y monitoreo interno
+   *
+   * @returns {Object} Información del estado actual del sistema
+   */
+  getSystemStatus() {
+    return {
+      totalGames: this.totalGames,
+      systemNormalized: this.systemNormalized,
+      probabilitiesActive: GAME_CONFIG.randomRangeControl.enableDynamicLoss,
+      manipulationActive: this.manipulationActive,
+      streakControlActive:
+        this.balance >= GAME_CONFIG.balanceThresholds.forceWin,
+      gamesUntilNormalization: Math.max(
+        0,
+        GAME_CONFIG.normalization.gameThreshold - this.totalGames,
+      ),
+    };
+  }
+
+  /**
+   * ✅ Controla las rachas de cashouts en el rango aleatorio
    * Solo se activa cuando el balance > 40k (rango completamente aleatorio)
    *
    * @param {boolean} playerCashedOut - Si el jugador hizo cashout
@@ -327,6 +436,69 @@ class DiamondMinesGame {
       this.consecutiveCashouts = 0;
       this.forceNextLoss = false;
     }
+  }
+
+  /**
+   * ✅ Calcula la probabilidad de pérdida según el balance en rango aleatorio
+   * Sistema dinámico que aumenta la probabilidad de pérdida a medida que sube el balance
+   * FUNCIÓN INVISIBLE - No genera logs ni mensajes
+   *
+   * @returns {number} Probabilidad de pérdida (0.0 - 1.0)
+   */
+  calculateLossProbability() {
+    // Solo aplicar en rango aleatorio (balance > 40k)
+    if (this.balance < GAME_CONFIG.balanceThresholds.forceWin) {
+      return 0; // Sin probabilidad especial en rango de manipulación
+    }
+
+    // Buscar el rango apropiado según el balance actual
+    const ranges = GAME_CONFIG.randomRangeControl.probabilityRanges;
+    const balanceRangeKeys = Object.keys(ranges)
+      .map(Number)
+      .sort((a, b) => b - a); // Ordenar de mayor a menor
+
+    // Encontrar el rango que corresponde al balance actual
+    for (const threshold of balanceRangeKeys) {
+      if (this.balance >= threshold) {
+        return ranges[threshold].lossChance;
+      }
+    }
+
+    // Si está por debajo del rango más bajo, usar valor por defecto
+    return GAME_CONFIG.randomRangeControl.defaultLossChance;
+  }
+
+  /**
+   * ✅ Obtiene información del rango de probabilidad actual
+   * FUNCIÓN INVISIBLE - Solo para uso interno del sistema
+   *
+   * @returns {Object} Información del rango de probabilidad actual
+   */
+  getCurrentProbabilityRangeInfo() {
+    if (this.balance < GAME_CONFIG.balanceThresholds.forceWin) {
+      return { lossChance: 0, description: "Sistema de manipulación activo" };
+    }
+
+    const ranges = GAME_CONFIG.randomRangeControl.probabilityRanges;
+    const balanceRangeKeys = Object.keys(ranges)
+      .map(Number)
+      .sort((a, b) => b - a);
+
+    for (const threshold of balanceRangeKeys) {
+      if (this.balance >= threshold) {
+        return {
+          threshold: threshold,
+          lossChance: ranges[threshold].lossChance,
+          description: ranges[threshold].description,
+        };
+      }
+    }
+
+    return {
+      threshold: 40000,
+      lossChance: GAME_CONFIG.randomRangeControl.defaultLossChance,
+      description: "Rango base",
+    };
   }
 
   /**
@@ -395,7 +567,7 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ NUEVO: Manipulación específica para rango aleatorio (balance > 40k)
+   * Manipulación específica para rango aleatorio (balance > 40k)
    * Solo se activa cuando forceNextLoss = true
    * Fuerza pérdida colocando una mina en la primera celda clickeada
    *
@@ -439,6 +611,63 @@ class DiamondMinesGame {
     }
 
     return false;
+  }
+
+  /**
+   * ✅ ACTUALIZADO: Aplica manipulación probabilística en rango aleatorio
+   * Ahora respeta el estado de normalización del sistema
+   *
+   * @param {number} clickedIndex - Índice de la celda clickeada
+   * @returns {boolean} true si se aplicó manipulación, false si no
+   */
+  applyProbabilisticManipulation(clickedIndex) {
+    // ✅ NUEVO: Verificar si el sistema está normalizado
+    if (this.systemNormalized) {
+      return false; // No aplicar probabilidades si está normalizado
+    }
+
+    // Solo aplicar en rango aleatorio y si el sistema está habilitado
+    if (
+      this.balance < GAME_CONFIG.balanceThresholds.forceWin ||
+      !GAME_CONFIG.randomRangeControl.enableDynamicLoss
+    ) {
+      return false;
+    }
+
+    // Obtener probabilidad de pérdida según balance
+    const lossProbability = this.calculateLossProbability();
+
+    // Generar número aleatorio para decidir si aplicar manipulación
+    const randomValue = Math.random();
+
+    // Si el número aleatorio es menor que la probabilidad, forzar pérdida
+    if (randomValue < lossProbability) {
+      // Forzar pérdida colocando mina en la celda clickeada
+      if (!this.cells[clickedIndex].hasMine) {
+        this.cells[clickedIndex].hasMine = true;
+
+        // Agregar a posiciones de minas si no existe
+        if (!this.minePositions.includes(clickedIndex)) {
+          this.minePositions.push(clickedIndex);
+        }
+
+        // Remover una mina existente para mantener el balance
+        if (this.minePositions.length > this.selectedMines) {
+          const mineToRemove = this.findMineToRemove(clickedIndex);
+          if (mineToRemove !== -1) {
+            this.cells[mineToRemove].hasMine = false;
+            const indexToRemove = this.minePositions.indexOf(mineToRemove);
+            if (indexToRemove > -1) {
+              this.minePositions.splice(indexToRemove, 1);
+            }
+          }
+        }
+
+        return true; // Manipulación aplicada
+      }
+    }
+
+    return false; // No se aplicó manipulación
   }
 
   /**
@@ -486,7 +715,7 @@ class DiamondMinesGame {
 
   /**
    * ✅ ACTUALIZADO: Maneja el click en una celda del tablero
-   * Ahora incluye el sistema de control de rachas
+   * Ahora incluye manipulación probabilística y control de rachas
    * @param {number} index - Índice de la celda clickeada (0-24)
    */
   handleCellClick(index) {
@@ -497,11 +726,21 @@ class DiamondMinesGame {
 
     const cell = this.cells[index];
 
-    // ✅ NUEVO: Aplicar manipulación de rango aleatorio PRIMERO
-    const randomRangeApplied = this.applyRandomRangeManipulation(index);
+    // ✅ Aplicar manipulaciones en orden de prioridad
+    let manipulationApplied = false;
 
-    // Solo aplicar manipulación de rango bajo si no se aplicó la de rango aleatorio
-    if (!randomRangeApplied) {
+    // 1. PRIORIDAD ALTA: Control de rachas (fuerza pérdida después de 3 cashouts)
+    if (this.applyRandomRangeManipulation(index)) {
+      manipulationApplied = true;
+    }
+
+    // 2. PRIORIDAD MEDIA: Manipulación probabilística (según balance)
+    if (!manipulationApplied && this.applyProbabilisticManipulation(index)) {
+      manipulationApplied = true;
+    }
+
+    // 3. PRIORIDAD BAJA: Manipulación de rango bajo (balance < 40k)
+    if (!manipulationApplied) {
       this.manipulateMines(index);
     }
 
@@ -673,7 +912,7 @@ class DiamondMinesGame {
       this.consecutiveWins++;
     }
 
-    // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+    // Aplicar control de rachas para rango aleatorio
     this.handleStreakControl(true, false); // true = cashout, false = no victoria completa
 
     this.updateUI();
@@ -720,7 +959,7 @@ class DiamondMinesGame {
         this.consecutiveWins++;
       }
 
-      // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+      // Aplicar control de rachas para rango aleatorio
       this.handleStreakControl(false, true); // false = no cashout, true = victoria completa
 
       this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
@@ -744,7 +983,7 @@ class DiamondMinesGame {
         this.consecutiveWins = 0;
       }
 
-      // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+      // Aplicar control de rachas para rango aleatorio
       this.handleStreakControl(false, false); // false = no cashout, false = no victoria
     }
 
@@ -981,16 +1220,23 @@ class DiamondMinesGame {
 
   /**
    * ✅ ACTUALIZADO: Reinicia el juego completamente al estado inicial
-   * Restaura el balance a $50.000 y resetea todo incluyendo sistemas de control
+   * Opcionalmente resetea el contador de tiradas
    */
   resetToInitialState() {
     this.balance = GAME_CONFIG.initialBalance; // Volver a $50.000
     this.consecutiveWins = 0; // Resetear contador de victorias consecutivas
     this.manipulationActive = false; // Resetear sistema de manipulación
 
-    // ✅ NUEVO: Resetear variables de control de rachas
+    // Resetear variables de control de rachas
     this.consecutiveCashouts = 0;
     this.forceNextLoss = false;
+
+    // ✅ NUEVO: Resetear sistema de normalización (opcional)
+    this.totalGames = 0;
+    this.systemNormalized = false;
+
+    // Reactivar probabilidades dinámicas
+    GAME_CONFIG.randomRangeControl.enableDynamicLoss = true;
 
     this.resetGame(); // Resetear tablero y variables
     this.updateStatusMessage(
