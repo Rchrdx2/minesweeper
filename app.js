@@ -9,9 +9,10 @@
  * Características principales:
  * - Sistema de balance en pesos colombianos
  * - Manipulación de minas basada en el balance del jugador
- * - Sistema de victoria asegurada con límite de 3 diamantes
+ * - Sistema de rangos dinámicos INVISIBLE con aumento paulatino de espacios
  * - Modal de límite máximo cuando se alcanzan $100.000
  * - Multiplicadores dinámicos basados en riesgo
+ * - Protección contra balance cero (mínimo 5k)
  */
 
 // Configuración principal del juego
@@ -22,9 +23,23 @@ const GAME_CONFIG = {
   maxBet: 5000, // Apuesta máxima: 5,000 pesos
   // Umbrales de balance que controlan el comportamiento del juego
   balanceThresholds: {
-    forceWin: 40000, // Por debajo de 40k: ayudar al jugador (mover minas)
+    forceWin: 40000, // Por debajo de 40k: activar sistema
     maxBalance: 100000, // Límite máximo absoluto: 100,000 pesos
-    minBalance: 40000, // Balance mínimo antes de activar ayuda
+    minBalance: 5000, // Balance mínimo absoluto (no llegar a 0)
+  },
+  // ✅ Sistema de rangos dinámicos (INVISIBLE para el usuario)
+  manipulation: {
+    // Configuración de espacios destapables según balance
+    balanceRanges: {
+      35000: { maxSpaces: 3, description: "Balance alto - 3 espacios" },
+      30000: { maxSpaces: 4, description: "Balance medio-alto - 4 espacios" },
+      25000: { maxSpaces: 5, description: "Balance medio - 5 espacios" },
+      20000: { maxSpaces: 6, description: "Balance medio-bajo - 6 espacios" },
+      15000: { maxSpaces: 7, description: "Balance bajo - 7 espacios" },
+      10000: { maxSpaces: 8, description: "Balance muy bajo - 8 espacios" },
+      5000: { maxSpaces: 10, description: "Balance crítico - 10 espacios" },
+    },
+    defaultMaxSpaces: 3, // Valor por defecto
   },
   // Sistema de multiplicadores
   multipliers: {
@@ -35,10 +50,6 @@ const GAME_CONFIG = {
       4: 1.8, // 4 minas = multiplicador x1.8
       5: 2.3, // 5 minas = multiplicador x2.3
     },
-  },
-  // Configuración del sistema de manipulación
-  manipulation: {
-    maxConsecutiveWins: 3, // Máximo 3 victorias consecutivas antes de forzar pérdida
   },
 };
 
@@ -69,8 +80,8 @@ const GAME_STATES = {
  * Maneja toda la lógica del juego incluyendo:
  * - Estado del tablero y las celdas
  * - Balance del jugador y apuestas
- * - Manipulación de minas según el balance
- * - Sistema de victoria asegurada con límite
+ * - Sistema de rangos dinámicos de manipulación (INVISIBLE)
+ * - Sistema de victoria asegurada con límite variable
  * - Interfaz de usuario y eventos
  * - Sistema modal de límites
  */
@@ -232,7 +243,7 @@ class DiamondMinesGame {
     );
     betInput.value = betAmount;
 
-    // Verificar que el jugador tenga suficiente balance
+    // ✅ Verificar que el jugador tenga suficiente balance (SIN revelar sistema)
     if (betAmount > this.balance) {
       this.updateStatusMessage(
         "No tienes suficiente balance para esta apuesta.",
@@ -266,6 +277,71 @@ class DiamondMinesGame {
   checkManipulationSystem() {
     this.manipulationActive =
       this.balance < GAME_CONFIG.balanceThresholds.forceWin;
+  }
+
+  /**
+   * ✅ Calcula cuántos espacios puede destapar el usuario según su balance
+   * Sistema dinámico que aumenta los espacios permitidos a medida que baja el balance
+   * FUNCIÓN INVISIBLE - No genera logs ni mensajes
+   *
+   * @returns {number} Número de espacios que puede destapar antes de forzar pérdida
+   */
+  calculateAllowedSpaces() {
+    // Si el sistema no está activo, no hay restricciones
+    if (!this.manipulationActive) {
+      return Infinity; // Sin límite cuando balance >= 40k
+    }
+
+    // Buscar el rango apropiado según el balance actual
+    const ranges = GAME_CONFIG.manipulation.balanceRanges;
+    const balanceRangeKeys = Object.keys(ranges)
+      .map(Number)
+      .sort((a, b) => b - a); // Ordenar de mayor a menor
+
+    // Encontrar el rango que corresponde al balance actual
+    for (const threshold of balanceRangeKeys) {
+      if (this.balance >= threshold) {
+        return ranges[threshold].maxSpaces;
+      }
+    }
+
+    // Si está por debajo del rango más bajo, usar el último valor
+    const lowestRange = Math.min(...balanceRangeKeys);
+    return ranges[lowestRange].maxSpaces;
+  }
+
+  /**
+   * ✅ Obtiene información detallada del rango actual del balance
+   * FUNCIÓN INVISIBLE - Solo para uso interno del sistema
+   *
+   * @returns {Object} Información del rango actual
+   */
+  getCurrentBalanceRangeInfo() {
+    if (!this.manipulationActive) {
+      return { maxSpaces: Infinity, description: "Sistema desactivado" };
+    }
+
+    const ranges = GAME_CONFIG.manipulation.balanceRanges;
+    const balanceRangeKeys = Object.keys(ranges)
+      .map(Number)
+      .sort((a, b) => b - a);
+
+    for (const threshold of balanceRangeKeys) {
+      if (this.balance >= threshold) {
+        return {
+          threshold: threshold,
+          maxSpaces: ranges[threshold].maxSpaces,
+          description: ranges[threshold].description,
+        };
+      }
+    }
+
+    const lowestRange = Math.min(...balanceRangeKeys);
+    return {
+      threshold: lowestRange,
+      maxSpaces: ranges[lowestRange].maxSpaces,
+      description: ranges[lowestRange].description,
+    };
   }
 
   /**
@@ -352,21 +428,26 @@ class DiamondMinesGame {
   }
 
   /**
-   * SISTEMA DE MANIPULACIÓN DE MINAS MODIFICADO
+   * ✅ SISTEMA DE MANIPULACIÓN DE MINAS CON RANGOS DINÁMICOS INVISIBLE
    *
-   * Nueva lógica implementada:
-   * - Victoria segura si diamantes encontrados < 4
-   * - Forzar pérdida si diamantes encontrados >= 4
-   * - Mantener el sistema activo para la siguiente partida
+   * Sistema completamente invisible que:
+   * - Espacios permitidos varían según el balance del usuario
+   * - Aumento paulatino y natural de oportunidades
+   * - Sistema de rangos que se ajusta automáticamente
+   * - Previene llegar a balance cero
+   * - NO genera logs ni mensajes visibles
    *
    * @param {number} clickedIndex - Índice de la celda que el jugador clickeó
    */
   manipulateMines(clickedIndex) {
-    // Solo aplicar manipulación cuando el balance está bajo (menos de 40k)
+    // Solo aplicar manipulación cuando el sistema está activo
     if (this.manipulationActive) {
-      // NUEVA LÓGICA: Verificar cantidad de diamantes encontrados
-      if (this.diamondsFound < GAME_CONFIG.manipulation.maxConsecutiveWins) {
-        // VICTORIA SEGURA: Menos de 4 diamantes encontrados
+      // Obtener la cantidad de espacios permitidos según el balance actual
+      const allowedSpaces = this.calculateAllowedSpaces();
+
+      // LÓGICA DINÁMICA: Verificar si puede seguir destapando
+      if (this.diamondsFound < allowedSpaces) {
+        // VICTORIA SEGURA: Dentro del límite permitido
         if (this.cells[clickedIndex].hasMine) {
           const newMinePosition = this.findSafeSpotForMine(clickedIndex);
           if (newMinePosition !== -1) {
@@ -379,10 +460,12 @@ class DiamondMinesGame {
             if (mineIndexInArray > -1) {
               this.minePositions.splice(mineIndexInArray, 1, newMinePosition);
             }
+
+            // ❌ SIN LOGS - Sistema completamente invisible
           }
         }
       } else {
-        // FORZAR PÉRDIDA: 4 o más diamantes encontrados
+        // FORZAR PÉRDIDA: Excedió el límite permitido
         if (!this.cells[clickedIndex].hasMine) {
           // Si la celda clickeada no tiene mina, colocar una
           this.cells[clickedIndex].hasMine = true;
@@ -393,7 +476,6 @@ class DiamondMinesGame {
           }
 
           // Remover una mina existente para mantener el balance
-          // Solo si queremos mantener el número original de minas
           if (this.minePositions.length > this.selectedMines) {
             const mineToRemove = this.findMineToRemove(clickedIndex);
             if (mineToRemove !== -1) {
@@ -404,6 +486,8 @@ class DiamondMinesGame {
               }
             }
           }
+
+          // ❌ SIN LOGS - Sistema completamente invisible
         }
       }
     }
@@ -609,6 +693,9 @@ class DiamondMinesGame {
       `${this.multiplier.toFixed(2)}x`;
     document.getElementById("minesLeft").textContent = this.selectedMines;
 
+    // ❌ ELIMINADO: Información del sistema dinámico (debe ser invisible)
+    // No mostrar información sobre espacios permitidos o rangos
+
     // Obtener referencias a elementos de control
     const startButton = document.getElementById("startGame");
     const cashOutButton = document.getElementById("cashOut");
@@ -622,7 +709,6 @@ class DiamondMinesGame {
     const isPlaying = this.gameState === GAME_STATES.PLAYING;
 
     // Verificar límites de balance solo cuando el juego está en estado READY
-    // Para otros estados, la verificación se hace explícitamente donde corresponde
     if (isReady) {
       this.checkBalanceLimits();
     }
@@ -634,17 +720,19 @@ class DiamondMinesGame {
       this.balance <= GAME_CONFIG.balanceThresholds.minBalance;
 
     // Configurar estado de controles principales
-    startButton.disabled = !isReady || atMaxBalance;
-    betInput.disabled = !isReady || atMaxBalance;
-    mineRadios.forEach((radio) => (radio.disabled = !isReady || atMaxBalance));
-    halveButton.disabled = !isReady || atMaxBalance;
-    doubleButton.disabled = !isReady || atMaxBalance;
+    startButton.disabled = !isReady || atMaxBalance || atMinBalance;
+    betInput.disabled = !isReady || atMaxBalance || atMinBalance;
+    mineRadios.forEach(
+      (radio) => (radio.disabled = !isReady || atMaxBalance || atMinBalance),
+    );
+    halveButton.disabled = !isReady || atMaxBalance || atMinBalance;
+    doubleButton.disabled = !isReady || atMaxBalance || atMinBalance;
 
     // El botón Cash Out solo está disponible durante el juego con diamantes encontrados
     cashOutButton.disabled = !isPlaying || this.diamondsFound === 0;
 
     // Configurar límites del input de apuesta
-    if (isReady && !atMaxBalance) {
+    if (isReady && !atMaxBalance && !atMinBalance) {
       betInput.max = Math.min(GAME_CONFIG.maxBet, this.balance);
       // Validar el valor actual del input por si ha quedado desactualizado
       let value = parseInt(betInput.value, 10);
@@ -673,40 +761,45 @@ class DiamondMinesGame {
   }
 
   /**
-   * SISTEMA DE VERIFICACIÓN DE LÍMITES DE BALANCE
+   * ✅ SISTEMA DE VERIFICACIÓN DE LÍMITES DE BALANCE ACTUALIZADO
    *
    * Verifica si el jugador ha alcanzado los límites críticos:
-   * - Límite máximo (100k): Muestra modal de felicitación y bloquea el juego
-   * - Límite mínimo (40k): Asegura que el balance no baje de este monto
+   * - Límite máximo (100k): Muestra modal y bloquea
+   * - Límite mínimo (5k): Previene llegar a cero DE FORMA INVISIBLE
    *
-   * @returns {boolean} true si se alcanzó algún límite, false si no
+   * @returns {boolean} true si se alcanzó algún límite crítico
    */
   checkBalanceLimits() {
     // Verificar límite máximo de 100k
     if (this.balance >= GAME_CONFIG.balanceThresholds.maxBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.maxBalance;
-      this.showMaxLimitModal(); // Mostrar modal de felicitación
+      this.showMaxLimitModal();
       return true;
     }
 
-    // Verificar límite mínimo de 40k
+    // ✅ Verificar límite mínimo de 5k (SIN mostrar advertencias)
     if (this.balance < GAME_CONFIG.balanceThresholds.minBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.minBalance;
+      // ❌ SIN ADVERTENCIAS - Sistema invisible
       return true;
     }
 
-    return false; // No se alcanzó ningún límite
+    return false;
+  }
+
+  /**
+   * ❌ FUNCIÓN ELIMINADA - Sistema debe ser invisible
+   * Anteriormente mostraba advertencia de balance mínimo
+   */
+  showMinBalanceWarning() {
+    // Función vacía - no mostrar advertencias del sistema
+    // El sistema funciona de forma invisible
   }
 
   /**
    * SISTEMA MODAL DE LÍMITE MÁXIMO
    *
    * Muestra un modal de felicitación cuando el jugador alcanza $100.000
-   * Incluye:
-   * - Mensaje de felicitación
-   * - Countdown automático de 5 segundos
-   * - Botón para reiniciar inmediatamente
-   * - Bloqueo total de la interfaz de juego
    */
   showMaxLimitModal() {
     // Bloquear toda la interfaz poniendo el juego en estado READY
@@ -796,14 +889,14 @@ class DiamondMinesGame {
   }
 
   /**
-   * Muestra advertencias cuando el balance está cerca de los límites
-   * Solo se muestra cuando el balance está muy bajo (cerca de 40k)
+   * ✅ ACTUALIZADO: Muestra advertencias genéricas sin revelar el sistema
    */
   showBalanceWarning() {
-    // Advertencia de balance bajo (cuando está cerca de los 40k)
-    if (this.balance <= GAME_CONFIG.balanceThresholds.minBalance + 5000) {
+    // Solo advertencia genérica de balance bajo, sin mencionar el sistema
+    if (this.balance <= 10000) {
       this.updateStatusMessage("⚠️ Balance bajo. ¡Juega con cuidado!");
     }
+    // ❌ NO mencionar rangos, espacios permitidos, o sistema de ayuda
   }
 }
 
