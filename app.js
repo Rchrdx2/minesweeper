@@ -9,6 +9,7 @@
  * Características principales:
  * - Sistema de balance en pesos colombianos
  * - Manipulación de minas basada en el balance del jugador
+ * - Sistema de victoria asegurada con límite de 3 diamantes
  * - Modal de límite máximo cuando se alcanzan $100.000
  * - Multiplicadores dinámicos basados en riesgo
  */
@@ -19,14 +20,12 @@ const GAME_CONFIG = {
   initialBalance: 50000, // Balance inicial: 50,000 pesos
   minBet: 1000, // Apuesta mínima: 1,000 pesos
   maxBet: 5000, // Apuesta máxima: 5,000 pesos
-
   // Umbrales de balance que controlan el comportamiento del juego
   balanceThresholds: {
     forceWin: 40000, // Por debajo de 40k: ayudar al jugador (mover minas)
     maxBalance: 100000, // Límite máximo absoluto: 100,000 pesos
     minBalance: 40000, // Balance mínimo antes de activar ayuda
   },
-
   // Sistema de multiplicadores
   multipliers: {
     base: 1.1, // Multiplicador base que crece exponencialmente
@@ -36,6 +35,10 @@ const GAME_CONFIG = {
       4: 1.8, // 4 minas = multiplicador x1.8
       5: 2.3, // 5 minas = multiplicador x2.3
     },
+  },
+  // Configuración del sistema de manipulación
+  manipulation: {
+    maxConsecutiveWins: 3, // Máximo 3 victorias consecutivas antes de forzar pérdida
   },
 };
 
@@ -67,6 +70,7 @@ const GAME_STATES = {
  * - Estado del tablero y las celdas
  * - Balance del jugador y apuestas
  * - Manipulación de minas según el balance
+ * - Sistema de victoria asegurada con límite
  * - Interfaz de usuario y eventos
  * - Sistema modal de límites
  */
@@ -94,6 +98,10 @@ class DiamondMinesGame {
     this.gameBoard = null; // Referencia al elemento del tablero
     this.cells = []; // Array con información de cada celda
     this.minePositions = []; // Posiciones donde están las minas
+
+    // Variables del sistema de manipulación
+    this.manipulationActive = false; // Si el sistema está activo
+    this.consecutiveWins = 0; // Victorias consecutivas en el sistema
 
     // Inicializar el juego
     this.initializeGame();
@@ -215,7 +223,6 @@ class DiamondMinesGame {
    */
   startGame() {
     const betInput = document.getElementById("betAmount");
-
     // Re-validar la apuesta justo antes de empezar
     let betAmount = parseInt(betInput.value, 10);
     const maxAllowedBet = Math.min(GAME_CONFIG.maxBet, this.balance);
@@ -240,6 +247,9 @@ class DiamondMinesGame {
     this.diamondsFound = 0;
     this.multiplier = 1.0;
 
+    // Verificar si el sistema de manipulación debe activarse
+    this.checkManipulationSystem();
+
     // Configurar el tablero con minas y diamantes
     this.setupBoard();
     this.updateUI();
@@ -247,6 +257,15 @@ class DiamondMinesGame {
 
     // Mostrar advertencia si el balance está bajo
     this.showBalanceWarning();
+  }
+
+  /**
+   * Verifica si el sistema de manipulación debe activarse
+   * Se activa cuando el balance está por debajo de 40k
+   */
+  checkManipulationSystem() {
+    this.manipulationActive =
+      this.balance < GAME_CONFIG.balanceThresholds.forceWin;
   }
 
   /**
@@ -275,7 +294,7 @@ class DiamondMinesGame {
 
   /**
    * Genera posiciones aleatorias para las minas
-   * @returns {Array<number>} Array con las posiciones de las minas
+   * @returns {Array} Array con las posiciones de las minas
    */
   generateMinePositions() {
     const positions = [];
@@ -288,6 +307,7 @@ class DiamondMinesGame {
         positions.push(randomPos);
       }
     }
+
     return positions;
   }
 
@@ -332,35 +352,61 @@ class DiamondMinesGame {
   }
 
   /**
-   * SISTEMA DE MANIPULACIÓN DE MINAS
+   * SISTEMA DE MANIPULACIÓN DE MINAS MODIFICADO
    *
-   * Esta función implementa el sistema de "ayuda" al jugador basado en su balance:
-   * - Si el balance está por debajo de 40k: ayudar moviendo minas para evitar pérdidas
-   * - Si el balance está entre 40k-100k: juego completamente aleatorio y justo
+   * Nueva lógica implementada:
+   * - Victoria segura si diamantes encontrados < 4
+   * - Forzar pérdida si diamantes encontrados >= 4
+   * - Mantener el sistema activo para la siguiente partida
    *
    * @param {number} clickedIndex - Índice de la celda que el jugador clickeó
    */
   manipulateMines(clickedIndex) {
-    // Solo forzar victoria cuando el balance está bajo (menos de 40k)
-    if (this.balance < GAME_CONFIG.balanceThresholds.forceWin) {
-      // Si el jugador clickeó una mina, intentar moverla
-      if (this.cells[clickedIndex].hasMine) {
-        const newMinePosition = this.findSafeSpotForMine(clickedIndex);
-        if (newMinePosition !== -1) {
-          // Mover la mina a una posición segura
-          this.cells[clickedIndex].hasMine = false;
-          this.cells[newMinePosition].hasMine = true;
+    // Solo aplicar manipulación cuando el balance está bajo (menos de 40k)
+    if (this.manipulationActive) {
+      // NUEVA LÓGICA: Verificar cantidad de diamantes encontrados
+      if (this.diamondsFound < GAME_CONFIG.manipulation.maxConsecutiveWins) {
+        // VICTORIA SEGURA: Menos de 4 diamantes encontrados
+        if (this.cells[clickedIndex].hasMine) {
+          const newMinePosition = this.findSafeSpotForMine(clickedIndex);
+          if (newMinePosition !== -1) {
+            // Mover la mina a una posición segura
+            this.cells[clickedIndex].hasMine = false;
+            this.cells[newMinePosition].hasMine = true;
 
-          // Actualizar el array de posiciones de minas
-          const mineIndexInArray = this.minePositions.indexOf(clickedIndex);
-          if (mineIndexInArray > -1) {
-            this.minePositions.splice(mineIndexInArray, 1, newMinePosition);
+            // Actualizar el array de posiciones de minas
+            const mineIndexInArray = this.minePositions.indexOf(clickedIndex);
+            if (mineIndexInArray > -1) {
+              this.minePositions.splice(mineIndexInArray, 1, newMinePosition);
+            }
+          }
+        }
+      } else {
+        // FORZAR PÉRDIDA: 4 o más diamantes encontrados
+        if (!this.cells[clickedIndex].hasMine) {
+          // Si la celda clickeada no tiene mina, colocar una
+          this.cells[clickedIndex].hasMine = true;
+
+          // Agregar esta posición al array de minas si no existe
+          if (!this.minePositions.includes(clickedIndex)) {
+            this.minePositions.push(clickedIndex);
+          }
+
+          // Remover una mina existente para mantener el balance
+          // Solo si queremos mantener el número original de minas
+          if (this.minePositions.length > this.selectedMines) {
+            const mineToRemove = this.findMineToRemove(clickedIndex);
+            if (mineToRemove !== -1) {
+              this.cells[mineToRemove].hasMine = false;
+              const indexToRemove = this.minePositions.indexOf(mineToRemove);
+              if (indexToRemove > -1) {
+                this.minePositions.splice(indexToRemove, 1);
+              }
+            }
           }
         }
       }
     }
-    // Nota: Se removió la lógica de forzar pérdida a los 97k
-    // El juego ahora es completamente aleatorio después de 40k
   }
 
   /**
@@ -379,6 +425,7 @@ class DiamondMinesGame {
         safeSpots.push(i);
       }
     }
+
     // Retornar una posición aleatoria de las seguras, o -1 si no hay
     return safeSpots.length > 0
       ? safeSpots[Math.floor(Math.random() * safeSpots.length)]
@@ -386,18 +433,19 @@ class DiamondMinesGame {
   }
 
   /**
-   * Busca una mina que se pueda mover (no revelada y diferente a la clickeada)
-   * @param {number} avoidIndex - Índice a evitar
-   * @returns {number} Índice de mina movible, o -1 si no hay ninguna
+   * Busca una mina que se pueda remover (no revelada y diferente a la clickeada)
+   * para mantener el balance del juego cuando se fuerza una pérdida
    *
-   * Nota: Esta función ya no se usa en la lógica actual
+   * @param {number} avoidIndex - Índice a evitar
+   * @returns {number} Índice de mina removible, o -1 si no hay ninguna
    */
-  findMineToMove(avoidIndex) {
-    const movableMines = this.minePositions.filter(
+  findMineToRemove(avoidIndex) {
+    const removableMines = this.minePositions.filter(
       (pos) => pos !== avoidIndex && !this.cells[pos].revealed,
     );
-    return movableMines.length > 0
-      ? movableMines[Math.floor(Math.random() * movableMines.length)]
+
+    return removableMines.length > 0
+      ? removableMines[Math.floor(Math.random() * removableMines.length)]
       : -1;
   }
 
@@ -405,8 +453,8 @@ class DiamondMinesGame {
    * Actualiza el multiplicador de ganancias
    *
    * Fórmula: (base^diamantesEncontrados) * factorDeRiesgo
-   * - Base: 1.2 (crece exponencialmente)
-   * - Factor de riesgo: 1.5x (3 minas), 2.0x (4 minas), 2.5x (5 minas)
+   * - Base: 1.1 (crece exponencialmente)
+   * - Factor de riesgo: 1.3x (3 minas), 1.8x (4 minas), 2.3x (5 minas)
    */
   updateMultiplier() {
     const riskFactor = GAME_CONFIG.multipliers.riskFactors[this.selectedMines];
@@ -436,6 +484,12 @@ class DiamondMinesGame {
     // Aplicar las ganancias al balance
     this.balance += winnings;
     this.gameState = GAME_STATES.CASHED_OUT;
+
+    // Actualizar contador de victorias consecutivas si el sistema está activo
+    if (this.manipulationActive) {
+      this.consecutiveWins++;
+    }
+
     this.updateUI();
     this.updateStatusMessage(
       `Retiraste ${formatCurrency(winnings)}. ¡Buen trabajo!`,
@@ -473,8 +527,13 @@ class DiamondMinesGame {
       }
 
       this.balance += winnings;
-      this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
 
+      // Actualizar contador de victorias consecutivas si el sistema está activo
+      if (this.manipulationActive) {
+        this.consecutiveWins++;
+      }
+
+      this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
       // Verificar límites inmediatamente después de ganar
       this.updateUI();
       if (this.checkBalanceLimits()) {
@@ -489,8 +548,14 @@ class DiamondMinesGame {
           this.cells[pos].element.textContent = "💣";
         }
       });
-      this.updateUI();
+
+      // Resetear contador de victorias consecutivas en caso de derrota
+      if (this.manipulationActive) {
+        this.consecutiveWins = 0;
+      }
     }
+
+    this.updateUI();
 
     // Resetear el juego después de 3 segundos (solo si no se alcanzó el límite)
     setTimeout(() => this.resetGame(), 3000);
@@ -515,6 +580,9 @@ class DiamondMinesGame {
       cell.element.className = "game-cell";
       cell.element.textContent = "";
     });
+
+    // Verificar si el sistema de manipulación debe continuar activo
+    this.checkManipulationSystem();
 
     this.updateUI();
     this.updateStatusMessage("Configura tu apuesta y comienza de nuevo");
@@ -578,7 +646,6 @@ class DiamondMinesGame {
     // Configurar límites del input de apuesta
     if (isReady && !atMaxBalance) {
       betInput.max = Math.min(GAME_CONFIG.maxBet, this.balance);
-
       // Validar el valor actual del input por si ha quedado desactualizado
       let value = parseInt(betInput.value, 10);
       const maxAllowed = Math.min(GAME_CONFIG.maxBet, this.balance);
@@ -716,10 +783,12 @@ class DiamondMinesGame {
 
   /**
    * Reinicia el juego completamente al estado inicial
-   * Restaura el balance a $50.000 y resetea todo
+   * Restaura el balance a $50.000 y resetea todo incluyendo el sistema de manipulación
    */
   resetToInitialState() {
     this.balance = GAME_CONFIG.initialBalance; // Volver a $50.000
+    this.consecutiveWins = 0; // Resetear contador de victorias consecutivas
+    this.manipulationActive = false; // Resetear sistema de manipulación
     this.resetGame(); // Resetear tablero y variables
     this.updateStatusMessage(
       "Juego reiniciado. Configura tu apuesta y comienza",
@@ -735,8 +804,6 @@ class DiamondMinesGame {
     if (this.balance <= GAME_CONFIG.balanceThresholds.minBalance + 5000) {
       this.updateStatusMessage("⚠️ Balance bajo. ¡Juega con cuidado!");
     }
-    // Nota: Se removió la advertencia de límite máximo a 97k
-    // Solo se mantiene el límite máximo de 100k con bloqueo total
   }
 }
 
@@ -748,7 +815,6 @@ class DiamondMinesGame {
  */
 document.addEventListener("DOMContentLoaded", () => {
   const game = new DiamondMinesGame();
-
   // Hacer la instancia disponible globalmente para debugging
   // Útil para poder acceder al juego desde la consola del navegador
   window.DiamondMinesGame = game;
