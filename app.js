@@ -10,6 +10,7 @@
  * - Sistema de balance en pesos colombianos
  * - Manipulación de minas basada en el balance del jugador
  * - Sistema de rangos dinámicos INVISIBLE con aumento paulatino de espacios
+ * - Sistema de control de rachas en rango aleatorio
  * - Modal de límite máximo cuando se alcanzan $100.000
  * - Multiplicadores dinámicos basados en riesgo
  * - Protección contra balance cero (mínimo 5k)
@@ -40,6 +41,12 @@ const GAME_CONFIG = {
       5000: { maxSpaces: 10, description: "Balance crítico - 10 espacios" },
     },
     defaultMaxSpaces: 3, // Valor por defecto
+  },
+  // ✅ NUEVO: Control de rachas en rango aleatorio
+  streakControl: {
+    maxConsecutiveCashouts: 3, // Máximo 3 cashouts seguidos
+    forceEarlyLoss: true, // Forzar pérdida temprana cuando se active
+    resetOnLoss: true, // Resetear contador al perder
   },
   // Sistema de multiplicadores
   multipliers: {
@@ -81,6 +88,7 @@ const GAME_STATES = {
  * - Estado del tablero y las celdas
  * - Balance del jugador y apuestas
  * - Sistema de rangos dinámicos de manipulación (INVISIBLE)
+ * - Sistema de control de rachas en rango aleatorio
  * - Sistema de victoria asegurada con límite variable
  * - Interfaz de usuario y eventos
  * - Sistema modal de límites
@@ -113,6 +121,11 @@ class DiamondMinesGame {
     // Variables del sistema de manipulación
     this.manipulationActive = false; // Si el sistema está activo
     this.consecutiveWins = 0; // Victorias consecutivas en el sistema
+
+    // ✅ NUEVAS VARIABLES para control de rachas en rango aleatorio
+    this.consecutiveCashouts = 0; // Contador de cashouts seguidos
+    this.forceNextLoss = false; // Bandera para forzar pérdida en próxima partida
+    this.maxConsecutiveCashouts = 3; // Límite máximo de cashouts seguidos (3-4)
 
     // Inicializar el juego
     this.initializeGame();
@@ -243,7 +256,7 @@ class DiamondMinesGame {
     );
     betInput.value = betAmount;
 
-    // ✅ Verificar que el jugador tenga suficiente balance (SIN revelar sistema)
+    // Verificar que el jugador tenga suficiente balance
     if (betAmount > this.balance) {
       this.updateStatusMessage(
         "No tienes suficiente balance para esta apuesta.",
@@ -280,7 +293,44 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ Calcula cuántos espacios puede destapar el usuario según su balance
+   * ✅ NUEVO: Controla las rachas de cashouts en el rango aleatorio
+   * Solo se activa cuando el balance > 40k (rango completamente aleatorio)
+   *
+   * @param {boolean} playerCashedOut - Si el jugador hizo cashout
+   * @param {boolean} playerWon - Si el jugador ganó la partida
+   */
+  handleStreakControl(playerCashedOut, playerWon) {
+    // Solo aplicar control de rachas en el rango aleatorio (balance > 40k)
+    if (this.balance >= GAME_CONFIG.balanceThresholds.forceWin) {
+      if (playerCashedOut || playerWon) {
+        // Incrementar contador de cashouts/victorias seguidos
+        this.consecutiveCashouts++;
+
+        // Verificar si se alcanzó el límite (3-4 cashouts seguidos)
+        if (
+          this.consecutiveCashouts >=
+          GAME_CONFIG.streakControl.maxConsecutiveCashouts
+        ) {
+          // Activar bandera para forzar pérdida en la siguiente partida
+          this.forceNextLoss = true;
+
+          // Resetear contador después de activar el sistema
+          this.consecutiveCashouts = 0;
+        }
+      } else {
+        // Si perdió, resetear contador y bandera
+        this.consecutiveCashouts = 0;
+        this.forceNextLoss = false;
+      }
+    } else {
+      // Si está en rango de manipulación, no aplicar control de rachas
+      this.consecutiveCashouts = 0;
+      this.forceNextLoss = false;
+    }
+  }
+
+  /**
+   * Calcula cuántos espacios puede destapar el usuario según su balance
    * Sistema dinámico que aumenta los espacios permitidos a medida que baja el balance
    * FUNCIÓN INVISIBLE - No genera logs ni mensajes
    *
@@ -311,7 +361,7 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ Obtiene información detallada del rango actual del balance
+   * Obtiene información detallada del rango actual del balance
    * FUNCIÓN INVISIBLE - Solo para uso interno del sistema
    *
    * @returns {Object} Información del rango actual
@@ -342,6 +392,53 @@ class DiamondMinesGame {
       maxSpaces: ranges[lowestRange].maxSpaces,
       description: ranges[lowestRange].description,
     };
+  }
+
+  /**
+   * ✅ NUEVO: Manipulación específica para rango aleatorio (balance > 40k)
+   * Solo se activa cuando forceNextLoss = true
+   * Fuerza pérdida colocando una mina en la primera celda clickeada
+   *
+   * @param {number} clickedIndex - Índice de la celda clickeada
+   * @returns {boolean} true si se aplicó manipulación, false si no
+   */
+  applyRandomRangeManipulation(clickedIndex) {
+    // Solo aplicar si estamos en rango aleatorio y hay bandera activa
+    if (
+      this.balance >= GAME_CONFIG.balanceThresholds.forceWin &&
+      this.forceNextLoss
+    ) {
+      // Forzar pérdida inmediata colocando mina en la primera celda
+      if (this.diamondsFound === 0) {
+        // Primera celda de la partida - colocar mina
+        if (!this.cells[clickedIndex].hasMine) {
+          this.cells[clickedIndex].hasMine = true;
+
+          // Agregar a posiciones de minas si no existe
+          if (!this.minePositions.includes(clickedIndex)) {
+            this.minePositions.push(clickedIndex);
+          }
+
+          // Remover una mina existente para mantener el balance
+          if (this.minePositions.length > this.selectedMines) {
+            const mineToRemove = this.findMineToRemove(clickedIndex);
+            if (mineToRemove !== -1) {
+              this.cells[mineToRemove].hasMine = false;
+              const indexToRemove = this.minePositions.indexOf(mineToRemove);
+              if (indexToRemove > -1) {
+                this.minePositions.splice(indexToRemove, 1);
+              }
+            }
+          }
+        }
+
+        // Desactivar bandera después de aplicar
+        this.forceNextLoss = false;
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -388,7 +485,8 @@ class DiamondMinesGame {
   }
 
   /**
-   * Maneja el click en una celda del tablero
+   * ✅ ACTUALIZADO: Maneja el click en una celda del tablero
+   * Ahora incluye el sistema de control de rachas
    * @param {number} index - Índice de la celda clickeada (0-24)
    */
   handleCellClick(index) {
@@ -399,8 +497,13 @@ class DiamondMinesGame {
 
     const cell = this.cells[index];
 
-    // Aplicar manipulación de minas según el balance del jugador
-    this.manipulateMines(index);
+    // ✅ NUEVO: Aplicar manipulación de rango aleatorio PRIMERO
+    const randomRangeApplied = this.applyRandomRangeManipulation(index);
+
+    // Solo aplicar manipulación de rango bajo si no se aplicó la de rango aleatorio
+    if (!randomRangeApplied) {
+      this.manipulateMines(index);
+    }
 
     // Revelar la celda
     cell.revealed = true;
@@ -428,7 +531,7 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ SISTEMA DE MANIPULACIÓN DE MINAS CON RANGOS DINÁMICOS INVISIBLE
+   * SISTEMA DE MANIPULACIÓN DE MINAS CON RANGOS DINÁMICOS INVISIBLE
    *
    * Sistema completamente invisible que:
    * - Espacios permitidos varían según el balance del usuario
@@ -460,8 +563,6 @@ class DiamondMinesGame {
             if (mineIndexInArray > -1) {
               this.minePositions.splice(mineIndexInArray, 1, newMinePosition);
             }
-
-            // ❌ SIN LOGS - Sistema completamente invisible
           }
         }
       } else {
@@ -486,8 +587,6 @@ class DiamondMinesGame {
               }
             }
           }
-
-          // ❌ SIN LOGS - Sistema completamente invisible
         }
       }
     }
@@ -549,8 +648,8 @@ class DiamondMinesGame {
   }
 
   /**
-   * Permite al jugador retirar sus ganancias antes de completar el tablero
-   * Calcula las ganancias actuales y las suma al balance
+   * ✅ ACTUALIZADO: Permite al jugador retirar sus ganancias antes de completar el tablero
+   * Ahora incluye el control de rachas
    */
   cashOut() {
     // Solo permitir cash out durante el juego y con al menos 1 diamante
@@ -574,6 +673,9 @@ class DiamondMinesGame {
       this.consecutiveWins++;
     }
 
+    // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+    this.handleStreakControl(true, false); // true = cashout, false = no victoria completa
+
     this.updateUI();
     this.updateStatusMessage(
       `Retiraste ${formatCurrency(winnings)}. ¡Buen trabajo!`,
@@ -589,7 +691,8 @@ class DiamondMinesGame {
   }
 
   /**
-   * Termina la partida actual (victoria o derrota)
+   * ✅ ACTUALIZADO: Termina la partida actual (victoria o derrota)
+   * Ahora incluye el control de rachas
    * @param {boolean} won - true si el jugador ganó, false si perdió
    */
   endGame(won) {
@@ -617,6 +720,9 @@ class DiamondMinesGame {
         this.consecutiveWins++;
       }
 
+      // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+      this.handleStreakControl(false, true); // false = no cashout, true = victoria completa
+
       this.updateStatusMessage(`¡Ganaste ${formatCurrency(winnings)}!`);
       // Verificar límites inmediatamente después de ganar
       this.updateUI();
@@ -637,6 +743,9 @@ class DiamondMinesGame {
       if (this.manipulationActive) {
         this.consecutiveWins = 0;
       }
+
+      // ✅ NUEVO: Aplicar control de rachas para rango aleatorio
+      this.handleStreakControl(false, false); // false = no cashout, false = no victoria
     }
 
     this.updateUI();
@@ -692,9 +801,6 @@ class DiamondMinesGame {
     document.getElementById("multiplier").textContent =
       `${this.multiplier.toFixed(2)}x`;
     document.getElementById("minesLeft").textContent = this.selectedMines;
-
-    // ❌ ELIMINADO: Información del sistema dinámico (debe ser invisible)
-    // No mostrar información sobre espacios permitidos o rangos
 
     // Obtener referencias a elementos de control
     const startButton = document.getElementById("startGame");
@@ -761,7 +867,7 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ SISTEMA DE VERIFICACIÓN DE LÍMITES DE BALANCE ACTUALIZADO
+   * SISTEMA DE VERIFICACIÓN DE LÍMITES DE BALANCE ACTUALIZADO
    *
    * Verifica si el jugador ha alcanzado los límites críticos:
    * - Límite máximo (100k): Muestra modal y bloquea
@@ -777,10 +883,9 @@ class DiamondMinesGame {
       return true;
     }
 
-    // ✅ Verificar límite mínimo de 5k (SIN mostrar advertencias)
+    // Verificar límite mínimo de 5k (SIN mostrar advertencias)
     if (this.balance < GAME_CONFIG.balanceThresholds.minBalance) {
       this.balance = GAME_CONFIG.balanceThresholds.minBalance;
-      // ❌ SIN ADVERTENCIAS - Sistema invisible
       return true;
     }
 
@@ -788,7 +893,7 @@ class DiamondMinesGame {
   }
 
   /**
-   * ❌ FUNCIÓN ELIMINADA - Sistema debe ser invisible
+   * FUNCIÓN ELIMINADA - Sistema debe ser invisible
    * Anteriormente mostraba advertencia de balance mínimo
    */
   showMinBalanceWarning() {
@@ -875,13 +980,18 @@ class DiamondMinesGame {
   }
 
   /**
-   * Reinicia el juego completamente al estado inicial
-   * Restaura el balance a $50.000 y resetea todo incluyendo el sistema de manipulación
+   * ✅ ACTUALIZADO: Reinicia el juego completamente al estado inicial
+   * Restaura el balance a $50.000 y resetea todo incluyendo sistemas de control
    */
   resetToInitialState() {
     this.balance = GAME_CONFIG.initialBalance; // Volver a $50.000
     this.consecutiveWins = 0; // Resetear contador de victorias consecutivas
     this.manipulationActive = false; // Resetear sistema de manipulación
+
+    // ✅ NUEVO: Resetear variables de control de rachas
+    this.consecutiveCashouts = 0;
+    this.forceNextLoss = false;
+
     this.resetGame(); // Resetear tablero y variables
     this.updateStatusMessage(
       "Juego reiniciado. Configura tu apuesta y comienza",
@@ -889,14 +999,13 @@ class DiamondMinesGame {
   }
 
   /**
-   * ✅ ACTUALIZADO: Muestra advertencias genéricas sin revelar el sistema
+   * ACTUALIZADO: Muestra advertencias genéricas sin revelar el sistema
    */
   showBalanceWarning() {
     // Solo advertencia genérica de balance bajo, sin mencionar el sistema
     if (this.balance <= 10000) {
       this.updateStatusMessage("⚠️ Balance bajo. ¡Juega con cuidado!");
     }
-    // ❌ NO mencionar rangos, espacios permitidos, o sistema de ayuda
   }
 }
 
