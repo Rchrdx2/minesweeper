@@ -46,7 +46,7 @@ const GAME_CONFIG = {
   },
   // ✅ Control de rachas en rango aleatorio
   streakControl: {
-    maxConsecutiveCashouts: 3, // Máximo 3 cashouts seguidos
+    maxConsecutiveCashouts: 2, // Máximo 3 cashouts seguidos
     forceEarlyLoss: true, // Forzar pérdida temprana cuando se active
     resetOnLoss: true, // Resetear contador al perder
   },
